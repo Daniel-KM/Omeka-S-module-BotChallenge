@@ -1,0 +1,202 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var string $token
+ * @var int $delay
+ * @var int $cookieLifetime
+ * @var string $redirectUrl
+ * @var bool $isHttps
+ * @var bool $testHeadless
+ */
+
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
+
+// The styles follow Omeka S minimal layout colors (see application/view/error/).
+
+?>
+<!DOCTYPE html>
+<html lang="<?= $escapeAttr($this->lang()) ?>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title><?= $escape($translate('Verifying your browser')) ?></title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 24px;
+            background-color: #404E61;
+            color: #676767;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        #content {
+            background: #fff;
+            padding: 48px;
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 20px;
+            line-height: 24px;
+            color: #404E61;
+            margin-bottom: 12px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 24px;
+            border: 4px solid #dfdfdf;
+            border-top-color: #404E61;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .countdown {
+            font-size: 32px;
+            font-weight: bold;
+            color: #404E61;
+            margin: 12px 0;
+        }
+
+        .status {
+            color: #676767;
+            font-size: 14px;
+        }
+        .error {
+            color: #A91919;
+        }
+
+        noscript #noscript-box {
+            display: block;
+        }
+        #noscript-box {
+            border-left: 4px solid #A91919;
+            text-align: left;
+            padding-left: 12px;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 6px;
+            font-size: 12px;
+            color: rgba(255,255,255,.5);
+        }
+        footer a {
+            color: rgba(255,255,255,.7);
+            text-decoration: none;
+        }
+        footer a:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+            #content {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="content" role="main">
+        <noscript>
+            <div id="noscript-box">
+                <h1><?= $escape($translate('JavaScript required')) ?></h1>
+                <p class="error"><?= $escape($translate('Please enable JavaScript in your browser to access this site.')) ?></p>
+            </div>
+        </noscript>
+        <div id="challenge" style="display:none;">
+            <div class="spinner" id="spinner"></div>
+            <h1><?= $escape($translate('Verifying your browser…')) ?></h1>
+            <div class="countdown" id="countdown"></div>
+            <p class="status" id="status"><?= $escape($translate('This is an automatic process. Please wait.')) ?></p>
+        </div>
+    </div>
+    <footer>
+        <span><?= sprintf($translate('Powered by %s'), '<a href="https://omeka.org/s">Omeka S</a>') ?></span>
+    </footer>
+    <script>
+    (function() {
+        var token = <?= json_encode($token) ?>;
+        var delay = <?= (int) $delay ?>;
+        var cookieLifetime = <?= (int) $cookieLifetime ?>;
+        var redirectUrl = <?= json_encode($redirectUrl) ?>;
+        var isHttps = <?= $isHttps ? 'true' : 'false' ?>;
+        var testHeadless = <?= $testHeadless ? 'true' : 'false' ?>;
+
+        var box = document.getElementById('challenge');
+        var countdownEl = document.getElementById('countdown');
+        var statusEl = document.getElementById('status');
+        var spinnerEl = document.getElementById('spinner');
+
+        box.style.display = '';
+
+        if (testHeadless) {
+            var isBot = false;
+            if (navigator.webdriver === true) isBot = true;
+            if (!navigator.languages || navigator.languages.length === 0) isBot = true;
+            if (window._phantom || window.callPhantom) isBot = true;
+            if (window.__selenium_unwrapped || window.__webdriver_evaluate || window.__driver_evaluate) isBot = true;
+            if (/HeadlessChrome/.test(navigator.userAgent)) isBot = true;
+            var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+            if (!isMobile) {
+                if (navigator.plugins && navigator.plugins.length === 0) isBot = true;
+                if (navigator.connection && navigator.connection.rtt === 0) isBot = true;
+            }
+            if (isBot) {
+                spinnerEl.style.display = 'none';
+                countdownEl.textContent = '';
+                statusEl.className = 'status error';
+                statusEl.textContent = <?= json_encode($translate('Automated browser detected. Access denied.')) ?>;
+                return;
+            }
+        }
+
+        var remaining = delay;
+        countdownEl.textContent = remaining;
+        var interval = setInterval(function() {
+            remaining--;
+            if (remaining > 0) {
+                countdownEl.textContent = remaining;
+            } else {
+                clearInterval(interval);
+                countdownEl.textContent = '';
+                spinnerEl.style.display = 'none';
+                var cookie = 'omeka_bot_challenge=' + token
+                    + '; path=/; max-age=' + cookieLifetime
+                    + '; samesite=Lax';
+                if (isHttps) cookie += '; secure';
+                document.cookie = cookie;
+                statusEl.textContent = <?= json_encode($translate('Verified. Redirecting…')) ?>;
+                window.location.href = redirectUrl;
+            }
+        }, 1000);
+    })();
+    </script>
+</body>
+</html>
