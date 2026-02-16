@@ -1,0 +1,105 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-16 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: view/bot-challenge/index/index.phtml:26
+msgid "Verifying your browser"
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:129
+msgid "JavaScript required"
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:130
+msgid "Please enable JavaScript in your browser to access this site."
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:135
+msgid "Verifying your browser…"
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:137
+msgid "This is an automatic process. Please wait."
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:141
+#, php-format
+msgid "Powered by %s"
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:175
+msgid "Automated browser detected. Access denied."
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:195
+msgid "Verified. Redirecting…"
+msgstr ""
+
+#: src/Form/ConfigForm.php:18
+msgid "HMAC salt"
+msgstr ""
+
+#: src/Form/ConfigForm.php:19
+msgid ""
+"Secret salt used to generate challenge tokens. Leave empty to regenerate "
+"automatically. Changing this value invalidates all existing cookies."
+msgstr ""
+
+#: src/Form/ConfigForm.php:29
+msgid "Challenge delay (seconds)"
+msgstr ""
+
+#: src/Form/ConfigForm.php:30
+msgid "Number of seconds the visitor must wait before the cookie is set."
+msgstr ""
+
+#: src/Form/ConfigForm.php:42
+msgid "Cookie lifetime (days)"
+msgstr ""
+
+#: src/Form/ConfigForm.php:43
+msgid "Number of days the challenge cookie remains valid."
+msgstr ""
+
+#: src/Form/ConfigForm.php:55
+msgid "Detect headless browsers"
+msgstr ""
+
+#: src/Form/ConfigForm.php:56
+msgid ""
+"Run additional tests to detect headless browsers (Selenium, PhantomJS, "
+"Puppeteer, etc.)."
+msgstr ""
+
+#: src/Form/ConfigForm.php:66
+msgid "Exception paths"
+msgstr ""
+
+#: src/Form/ConfigForm.php:67
+msgid ""
+"Url path prefixes to exclude from the challenge, one per line. Example: /api"
+msgstr ""
+
+#: src/Form/ConfigForm.php:78
+msgid "Exception IPs"
+msgstr ""
+
+#: src/Form/ConfigForm.php:79
+msgid ""
+"Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line."
+msgstr ""
