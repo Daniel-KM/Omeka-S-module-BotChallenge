@@ -99,7 +99,7 @@ class IndexControllerTest extends AbstractHttpControllerTestCase
     {
         $this->dispatch('/bot-challenge');
         $body = $this->getResponse()->getBody();
-        // Token is a 64-char hex SHA256-HMAC.
-        $this->assertMatchesRegularExpression('/var token = "[0-9a-f]{64}"/', $body);
+        // Token is "microtime_hmac": e.g. "0.12345678 1234567890_abc...def".
+        $this->assertMatchesRegularExpression('/var token = "[\d.]+ \d+_[0-9a-f]{64}"/', $body);
     }
 }

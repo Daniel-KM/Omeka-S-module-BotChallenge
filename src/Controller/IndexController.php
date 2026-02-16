@@ -21,8 +21,9 @@ class IndexController extends AbstractActionController
     public function indexAction()
     {
         $salt = $this->settings->get('botchallenge_salt', '');
-        $clientIp = $this->getClientIp();
-        $token = hash_hmac('sha256', $salt . $clientIp, $salt);
+        $timestamp = (string) microtime();
+        $hmac = hash_hmac('sha256', $salt . $timestamp, $salt);
+        $token = $timestamp . '_' . $hmac;
 
         // Validate redirect url: must start with "/" and not "//".
         $basePath = $this->getRequest()->getBasePath();
@@ -72,28 +73,4 @@ class IndexController extends AbstractActionController
             ->setTerminal(true);
     }
 
-    /**
-     * Get client ip, handling proxies.
-     */
-    protected function getClientIp(): string
-    {
-        $headers = $this->getRequest()->getHeaders();
-
-        if ($headers->has('X-Forwarded-For')) {
-            $ips = $headers->get('X-Forwarded-For')->getFieldValue();
-            $ip = trim(explode(',', $ips)[0]);
-            if ($ip !== '') {
-                return $ip;
-            }
-        }
-
-        if ($headers->has('X-Real-IP')) {
-            $ip = trim($headers->get('X-Real-IP')->getFieldValue());
-            if ($ip !== '') {
-                return $ip;
-            }
-        }
-
-        return $this->getRequest()->getServer('REMOTE_ADDR', '127.0.0.1');
-    }
 }

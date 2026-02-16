@@ -90,15 +90,26 @@ class MvcListeners extends AbstractListenerAggregate
             }
         }
 
-        // Check cookie.
-        $salt = $this->settings->get('botchallenge_salt', '');
-        $expectedToken = hash_hmac('sha256', $salt . $clientIp, $salt);
+        // Check cookie: format is "{microtime}_{hmac}".
         $cookie = $event->getRequest()->getCookie();
         $cookieValue = $cookie && $cookie->offsetExists('omeka_bot_challenge')
             ? $cookie->offsetGet('omeka_bot_challenge')
             : '';
-        if (hash_equals($expectedToken, $cookieValue)) {
-            return;
+        $pos = strrpos($cookieValue, '_');
+        if ($pos !== false) {
+            $salt = $this->settings->get('botchallenge_salt', '');
+            $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 90) * 86400;
+            $timestamp = substr($cookieValue, 0, $pos);
+            $hmac = substr($cookieValue, $pos + 1);
+            $expectedHmac = hash_hmac('sha256', $salt . $timestamp, $salt);
+            // microtime() format: "0.12345678 1234567890"; seconds
+            // are after the space.
+            $seconds = (int) substr($timestamp, strpos($timestamp, ' ') + 1);
+            if (hash_equals($expectedHmac, $hmac)
+                && time() - $seconds <= $cookieLifetime
+            ) {
+                return;
+            }
         }
 
         // Redirect to challenge page.
