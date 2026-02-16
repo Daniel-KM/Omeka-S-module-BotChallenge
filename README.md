@@ -29,7 +29,7 @@ See general end user documentation for [installing a module].
 Install the module from the root of Omeka S:
 
 ```sh
-composer require sempia/bot-challenge
+composer require daniel-km/omeka-s-module-bot-challenge
 ```
 
 The module is automatically downloaded in `composer-addons/modules/` and ready
@@ -146,7 +146,7 @@ The idea of this modules comes from a [thread in omeka forum].
 [Wordpress blackhole]: https://wordpress.org/plugins/blackhole-bad-bots
 [pull request #2432]: https://github.com/omeka/omeka-s/pull/2432 
 [BotChallenge.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-BotChallenge/-/releases
-[thread in omeka forum]: https://forum.omeka.org/t/bots-filter-and-omeka-classic-statistics/13491
+[thread in omeka forum]: https://forum.omeka.org/t/inquiry-about-bot-traffic-control-in-omeka-classic/28800
 [installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
 [module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-BotChallenge/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
