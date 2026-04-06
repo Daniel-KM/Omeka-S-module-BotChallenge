@@ -159,12 +159,12 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
         if (testHeadless) {
             var isBot = false;
             if (navigator.webdriver === true) isBot = true;
-            if (!navigator.languages || navigator.languages.length === 0) isBot = true;
             if (window._phantom || window.callPhantom) isBot = true;
             if (window.__selenium_unwrapped || window.__webdriver_evaluate || window.__driver_evaluate) isBot = true;
             if (/HeadlessChrome/.test(navigator.userAgent)) isBot = true;
             var isMobile = /Mobi|Android/i.test(navigator.userAgent);
             if (!isMobile) {
+                if (!navigator.languages || navigator.languages.length === 0) isBot = true;
                 if (navigator.plugins && navigator.plugins.length === 0) isBot = true;
                 if (navigator.connection && navigator.connection.rtt === 0) isBot = true;
             }
