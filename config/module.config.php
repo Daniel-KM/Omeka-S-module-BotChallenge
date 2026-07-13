@@ -60,6 +60,10 @@ return [
             'botchallenge_exception_paths' => [
                 '/api',
                 '/api-local',
+                '/iiif',
+                '/iiif-presentation',
+                '/oai',
+                '/sparql',
             ],
             'botchallenge_exception_ips' => [],
         ],

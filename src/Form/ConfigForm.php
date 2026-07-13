@@ -68,7 +68,7 @@ class ConfigForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'botchallenge_exception_paths',
-                    'rows' => 5,
+                    'rows' => 10,
                 ],
             ])
             ->add([
@@ -80,7 +80,7 @@ class ConfigForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'botchallenge_exception_ips',
-                    'rows' => 5,
+                    'rows' => 10,
                 ],
             ]);
 
