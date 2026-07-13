@@ -5,6 +5,7 @@ namespace BotChallenge;
 use BotChallenge\Controller\IndexController;
 use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
+use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Module\AbstractModule;
 
@@ -52,6 +53,13 @@ class Module extends AbstractModule
         foreach (array_keys($configLocal) as $key) {
             $settings->delete($key);
         }
+    }
+
+    public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $services): void
+    {
+        $this->setServiceLocator($services);
+        $filepath = __DIR__ . '/data/scripts/upgrade.php';
+        require_once $filepath;
     }
 
     public function getConfigForm(PhpRenderer $renderer)
