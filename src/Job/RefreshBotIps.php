@@ -29,6 +29,10 @@ class RefreshBotIps extends AbstractJob
         $logger = $services->get('Omeka\Logger');
         $settings = $services->get('Omeka\Settings');
 
+        // The modules are read-only in production, so the refreshed ranges are
+        // stored in the settings, not in the bundled files.
+        $override = $settings->get('botchallenge_bot_ips') ?: [];
+
         $refreshed = 0;
         foreach (array_keys(BotIps::BOTS) as $bot) {
             if ($this->shouldStop()) {
@@ -39,22 +43,24 @@ class RefreshBotIps extends AbstractJob
                 continue;
             }
             $ips = $this->fetchIps($url, BotIps::isJsonSource($bot));
-            // A source that returns much less than the bundled list is a
+            // A source that returns much less than the current list is a
             // truncated or altered answer, not a real removal of ranges.
-            $current = count(BotIps::ips($bot));
+            $current = count($override[$bot] ?? BotIps::ips($bot));
             if (count($ips) < self::MIN_IPS || ($current > 4 && count($ips) < $current / 2)) {
                 $logger->warn(
-                    'BotChallenge: the source of {bot} is unreachable or empty ({url}): the bundled ranges are kept.', // @translate
+                    'BotChallenge: the source of {bot} is unreachable or truncated ({url}): the previous ranges are kept.', // @translate
                     ['bot' => $bot, 'url' => $url]
                 );
                 continue;
             }
-            if (!$this->store($bot, $ips)) {
-                $logger->warn(
-                    'BotChallenge: the ranges of {bot} could not be written in {path}.', // @translate
-                    ['bot' => $bot, 'path' => BotIps::path($bot)]
-                );
-                continue;
+            // Store the ranges only when they differ from the bundled file, so
+            // the override stays empty while the module is up to date.
+            $bundled = BotIps::ips($bot);
+            sort($bundled);
+            if ($ips === $bundled) {
+                unset($override[$bot]);
+            } else {
+                $override[$bot] = $ips;
             }
             ++$refreshed;
             $logger->info(
@@ -63,11 +69,13 @@ class RefreshBotIps extends AbstractJob
             );
         }
 
+        $settings->set('botchallenge_bot_ips', $override);
+
         // Rebuild the merged list read by the listener of each request.
         $bots = $settings->get('botchallenge_exception_bots') ?: BotIps::DEFAULT_BOTS;
         $exceptionIps = $settings->get('botchallenge_exception_ips') ?: [];
         $settings->set('botchallenge_exception_ips_all', array_values(array_unique(array_merge(
-            BotIps::ipsForBots($bots),
+            BotIps::ipsForBots($bots, $override),
             $exceptionIps
         ))));
 
@@ -106,17 +114,5 @@ class RefreshBotIps extends AbstractJob
         $ips = array_filter($ips, fn ($ip) => (bool) preg_match('~^[0-9a-fA-F.:]+(/\d{1,3})?$~', (string) $ip));
         sort($ips);
         return array_values(array_unique($ips));
-    }
-
-    /**
-     * @param string[] $ips
-     */
-    protected function store(string $bot, array $ips): bool
-    {
-        $filepath = BotIps::path($bot);
-        if (file_exists($filepath) ? !is_writable($filepath) : !is_writable(dirname($filepath))) {
-            return false;
-        }
-        return (bool) file_put_contents($filepath, implode("\n", $ips) . "\n");
     }
 }

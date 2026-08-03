@@ -135,13 +135,19 @@ class BotIps
     /**
      * Ip ranges of the specified bots, deduplicated.
      *
+     * The modules are read-only in production, so the refreshed ranges are
+     * stored in the settings, not on disk: the "override" map (bot => ranges),
+     * when it holds an entry for a bot, takes precedence over the bundled file.
+     *
+     * @param string[] $bots
+     * @param array<string, string[]> $override
      * @return string[]
      */
-    public static function ipsForBots(array $bots): array
+    public static function ipsForBots(array $bots, array $override = []): array
     {
         $ips = [];
         foreach ($bots as $bot) {
-            $ips = array_merge($ips, self::ips($bot));
+            $ips = array_merge($ips, $override[$bot] ?? self::ips($bot));
         }
         return array_values(array_unique($ips));
     }
