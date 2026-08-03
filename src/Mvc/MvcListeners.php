@@ -76,7 +76,14 @@ class MvcListeners extends AbstractListenerAggregate
         }
         $exceptionPaths = $this->settings->get('botchallenge_exception_paths', []);
         foreach ($exceptionPaths as $exceptionPath) {
-            if ($exceptionPath !== '' && strpos($path, $exceptionPath) === 0) {
+            // Compare on a segment boundary with final "/".
+            $exceptionPath = rtrim((string) $exceptionPath, '/');
+            if ($exceptionPath === '') {
+                continue;
+            }
+            if ($path === $exceptionPath
+                || strpos($path, $exceptionPath . '/') === 0
+            ) {
                 return;
             }
         }
