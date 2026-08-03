@@ -13,6 +13,7 @@
             <file>tests/BotChallengeTest/Mvc/IpInCidrTest.php</file>
             <file>tests/BotChallengeTest/Mvc/GetClientIpTest.php</file>
             <file>tests/BotChallengeTest/Mvc/TokenTest.php</file>
+            <file>tests/BotChallengeTest/Stdlib/BotIpsTest.php</file>
         </testsuite>
         <!-- Controller tests (HTTP dispatch) -->
         <testsuite name="controller">
