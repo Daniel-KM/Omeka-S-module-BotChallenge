@@ -10,6 +10,10 @@ use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Module\AbstractModule;
 
+// The module namespace is not registered by Omeka while the module is inactive,
+// but the config file and the upgrade script reference BotIps.
+require_once __DIR__ . '/src/Stdlib/BotIps.php';
+
 class Module extends AbstractModule
 {
     public function getConfig()
