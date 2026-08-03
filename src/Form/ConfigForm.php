@@ -72,11 +72,34 @@ class ConfigForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'botchallenge_exception_bots',
+                'type' => Element\MultiCheckbox::class,
+                'options' => [
+                    'label' => 'Exempted search engines', // @translate
+                    'info' => 'Search engines whose published ip ranges are excluded from the challenge. Without exemption, they receive the javascript challenge, do not solve it, and stop indexing the site. The ranges are bundled with the module and may be updated with the job below.', // @translate
+                    'value_options' => \BotChallenge\Stdlib\BotIps::valueOptions(),
+                ],
+                'attributes' => [
+                    'id' => 'botchallenge_exception_bots',
+                ],
+            ])
+            ->add([
+                'name' => 'botchallenge_refresh_ips',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Update the ip ranges now', // @translate
+                    'info' => 'Run a job to fetch the ip ranges from the sources of the search engines. A source that is unreachable or truncated is skipped and the bundled ranges are kept.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'botchallenge_refresh_ips',
+                ],
+            ])
+            ->add([
                 'name' => 'botchallenge_exception_ips',
                 'type' => OmekaElement\ArrayTextarea::class,
                 'options' => [
                     'label' => 'Exception IPs', // @translate
-                    'info' => 'Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line.', // @translate
+                    'info' => 'Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line: the networks of the institution, a partner harvester, a specific bot. They are added to the ranges of the search engines above.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'botchallenge_exception_ips',
@@ -88,6 +111,10 @@ class ConfigForm extends Form
             $inputFilter
                 ->add([
                     'name' => 'botchallenge_salt',
+                    'required' => false,
+                ])
+                ->add([
+                    'name' => 'botchallenge_exception_bots',
                     'required' => false,
                 ]);
     }
