@@ -30,6 +30,7 @@ if (version_compare($oldVersion, '3.4.3', '<')) {
     $exceptionIps = $settings->get('botchallenge_exception_ips') ?: [];
 
     $settings->set('botchallenge_exception_bots', $bots);
+    $settings->set('botchallenge_bot_ips', []);
     $settings->set('botchallenge_exception_ips_all', array_values(array_unique(array_merge(
         Stdlib\BotIps::ipsForBots($bots),
         $exceptionIps

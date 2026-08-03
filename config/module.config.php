@@ -67,6 +67,8 @@ return [
             ],
             'botchallenge_exception_bots' => \BotChallenge\Stdlib\BotIps::DEFAULT_BOTS,
             'botchallenge_exception_ips' => [],
+            // Ranges refreshed from the sources, by bot.
+            'botchallenge_bot_ips' => [],
             // Ranges of the exempted bots and manual ranges, merged when the
             // config is saved and read by the listener of each request.
             'botchallenge_exception_ips_all' => [],
