@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-16 00:00+0000\n"
+"POT-Creation-Date: 2026-08-03 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -48,6 +48,30 @@ msgstr ""
 
 #: view/bot-challenge/index/index.phtml:195
 msgid "Verified. Redirecting…"
+msgstr ""
+
+#: Module.php:130
+#, php-format
+msgid ""
+"Updating the ip ranges of the search engines in the background (job %s)."
+msgstr ""
+
+#: src/Job/RefreshBotIps.php:47
+msgid ""
+"BotChallenge: the source of {bot} is unreachable or empty ({url}): the "
+"bundled ranges are kept."
+msgstr ""
+
+#: src/Job/RefreshBotIps.php:54
+msgid "BotChallenge: the ranges of {bot} could not be written in {path}."
+msgstr ""
+
+#: src/Job/RefreshBotIps.php:61
+msgid "BotChallenge: {total} ranges updated for {bot}."
+msgstr ""
+
+#: src/Job/RefreshBotIps.php:75
+msgid "BotChallenge: {total} source(s) refreshed."
 msgstr ""
 
 #: src/Form/ConfigForm.php:18
@@ -96,10 +120,67 @@ msgid ""
 msgstr ""
 
 #: src/Form/ConfigForm.php:78
-msgid "Exception IPs"
+msgid "Exempted search engines"
 msgstr ""
 
 #: src/Form/ConfigForm.php:79
 msgid ""
-"Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line."
+"Search engines whose published ip ranges are excluded from the challenge. "
+"Without exemption, they receive the javascript challenge, do not solve it, "
+"and stop indexing the site. The ranges are bundled with the module and may "
+"be updated with the job below."
+msgstr ""
+
+#: src/Form/ConfigForm.php:90
+msgid "Update the ip ranges now"
+msgstr ""
+
+#: src/Form/ConfigForm.php:91
+msgid ""
+"Run a job to fetch the ip ranges from the sources of the search engines. A "
+"source that is unreachable or truncated is skipped and the bundled ranges "
+"are kept."
+msgstr ""
+
+#: src/Form/ConfigForm.php:101
+msgid "Exception IPs"
+msgstr ""
+
+#: src/Form/ConfigForm.php:102
+msgid ""
+"Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line: the "
+"networks of the institution, a partner harvester, a specific bot. They are "
+"added to the ranges of the search engines above."
+msgstr ""
+
+#: src/Stdlib/BotIps.php:35
+msgid "Googlebot (Google)"
+msgstr ""
+
+#: src/Stdlib/BotIps.php:40
+msgid "Bingbot (Microsoft)"
+msgstr ""
+
+#: src/Stdlib/BotIps.php:45
+msgid "Applebot (Apple)"
+msgstr ""
+
+#: src/Stdlib/BotIps.php:50
+msgid "DuckDuckBot (DuckDuckGo)"
+msgstr ""
+
+#: src/Stdlib/BotIps.php:57
+msgid "Qwant"
+msgstr ""
+
+#: src/Stdlib/BotIps.php:61
+msgid "MojeekBot (Mojeek)"
+msgstr ""
+
+#: src/Stdlib/BotIps.php:65
+msgid "Marginalia"
+msgstr ""
+
+#: src/Stdlib/BotIps.php:69
+msgid "Yandex"
 msgstr ""

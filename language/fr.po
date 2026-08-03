@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-16 00:00+0000\n"
-"PO-Revision-Date: 2026-02-16 00:00+0000\n"
+"POT-Creation-Date: 2026-08-03 00:00+0000\n"
+"PO-Revision-Date: 2026-08-03 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -45,6 +45,27 @@ msgstr "Navigateur automatisé détecté. Accès refusé."
 #: view/bot-challenge/index/index.phtml:195
 msgid "Verified. Redirecting…"
 msgstr "Vérifié. Redirection…"
+
+#: Module.php:130
+#, php-format
+msgid "Updating the ip ranges of the search engines in the background (job %s)."
+msgstr "Mise à jour en arrière-plan des plages d’adresses ip des moteurs de recherche (tâche %s)."
+
+#: src/Job/RefreshBotIps.php:47
+msgid "BotChallenge: the source of {bot} is unreachable or empty ({url}): the bundled ranges are kept."
+msgstr "BotChallenge : la source du {bot} est inaccessible ou vide ({url}) : les plages groupées sont conservées."
+
+#: src/Job/RefreshBotIps.php:54
+msgid "BotChallenge: the ranges of {bot} could not be written in {path}."
+msgstr "BotChallenge : les plages de {bot} n’ont pas pu être écrites dans {path}."
+
+#: src/Job/RefreshBotIps.php:61
+msgid "BotChallenge: {total} ranges updated for {bot}."
+msgstr "BotChallenge : mises à jour de {total} plages pour {bot}."
+
+#: src/Job/RefreshBotIps.php:75
+msgid "BotChallenge: {total} source(s) refreshed."
+msgstr "BotChallenge : {total} source(s) actualisée(s)."
 
 #: src/Form/ConfigForm.php:18
 msgid "HMAC salt"
@@ -87,9 +108,60 @@ msgid "Url path prefixes to exclude from the challenge, one per line. Example: /
 msgstr "Préfixes de chemins d’url à exclure du défi, un par ligne. Exemple : /api"
 
 #: src/Form/ConfigForm.php:78
+msgid "Exempted search engines"
+msgstr "Moteurs de recherche exemptés"
+
+#: src/Form/ConfigForm.php:79
+msgid "Search engines whose published ip ranges are excluded from the challenge. Without exemption, they receive the javascript challenge, do not solve it, and stop indexing the site. The ranges are bundled with the module and may be updated with the job below."
+msgstr "Les moteurs de recherche dont les plages d’adresses ip publiées sont exclues du défi. À moins d'une dérogation, ils reçoivent le défi JavaScript, ne le résolvent pas et cessent d’indexer le site. Ces plages sont intégrées au module et peuvent être mises à jour à l’aide de la tâche ci-dessous."
+
+#: src/Form/ConfigForm.php:90
+msgid "Update the ip ranges now"
+msgstr "Mettre à jour les plages d'adresses ip maintenant"
+
+#: src/Form/ConfigForm.php:91
+msgid "Run a job to fetch the ip ranges from the sources of the search engines. A source that is unreachable or truncated is skipped and the bundled ranges are kept."
+msgstr "Lancez une tâche pour récupérer les plages d’adresses ip à partir des sources des moteurs de recherche. Les sources inaccessibles ou incomplètes sont ignorées et les plages regroupées sont conservées."
+
+#: src/Form/ConfigForm.php:101
 msgid "Exception IPs"
 msgstr "Exceptions pour les ips"
 
-#: src/Form/ConfigForm.php:79
-msgid "Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line."
-msgstr "Plages ips v4 ou v6 ou cidr à exclure du défi, une par ligne."
+#: src/Form/ConfigForm.php:102
+msgid "Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line: the networks of the institution, a partner harvester, a specific bot. They are added to the ranges of the search engines above."
+msgstr "Plages ip v4, v6 ou cidr à exclure du défi, une par ligne : les réseaux de l’établissement, d’un collecteur partenaire, d’un bot spécifique. Elles s’ajoutent aux plages des moteurs de recherche mentionnés ci-dessus."
+
+#: src/Stdlib/BotIps.php:35
+msgid "Googlebot (Google)"
+msgstr "Googlebot (Google)"
+
+#: src/Stdlib/BotIps.php:40
+msgid "Bingbot (Microsoft)"
+msgstr "Bingbot (Microsoft)"
+
+#: src/Stdlib/BotIps.php:45
+msgid "Applebot (Apple)"
+msgstr "Applebot (Apple)"
+
+#: src/Stdlib/BotIps.php:50
+msgid "DuckDuckBot (DuckDuckGo)"
+msgstr "DuckDuckBot (DuckDuckGo)"
+
+#: src/Stdlib/BotIps.php:57
+msgid "Qwant"
+msgstr "Qwant"
+
+#: src/Stdlib/BotIps.php:61
+msgid "MojeekBot (Mojeek)"
+msgstr "MojeekBot (Mojeek)"
+
+#: src/Stdlib/BotIps.php:65
+msgid "Marginalia"
+msgstr "Marginalia"
+
+#: src/Stdlib/BotIps.php:69
+msgid "Yandex"
+msgstr "Yandex"
+
+#~ msgid "Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line."
+#~ msgstr "Plages ips v4 ou v6 ou cidr à exclure du défi, une par ligne."
