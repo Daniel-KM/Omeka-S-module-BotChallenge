@@ -57,13 +57,22 @@ return [
             'botchallenge_delay' => 5,
             'botchallenge_cookie_lifetime' => 90,
             'botchallenge_test_headless' => true,
+            // Machine endpoints and token authorized links, where a browser
+            // challenge is meaningless or harmful.
             'botchallenge_exception_paths' => [
+                '/access/files',
                 '/api',
                 '/api-local',
+                '/cas',
+                '/contact-us/zip',
+                '/files',
                 '/iiif',
                 '/iiif-presentation',
                 '/oai',
+                '/session-token',
                 '/sparql',
+                '/sso',
+                '/validate',
             ],
             'botchallenge_exception_bots' => \BotChallenge\Stdlib\BotIps::DEFAULT_BOTS,
             'botchallenge_exception_ips' => [],
