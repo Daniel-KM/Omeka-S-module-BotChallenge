@@ -70,7 +70,32 @@ The configuration can be adjusted in the module config form.
 - Cookie lifetime: How long the challenge cookie remains valid (90 days)
 - Detect headless browsers: Run additional tests for headless environments
 - Exception paths: /api, /api-local
-- Exception ips: list of IPv4/IPv6/cidr ranges
+- Exempted search engines: check the engines whose published ip ranges are
+  excluded from the challenge
+- Update the ip ranges now: run a job to refresh the bundled ranges
+- Exception ips: list of IPv4/IPv6/cidr ranges, added to the ranges of the
+  engines above: the networks of the institution, a partner harvester, etc.
+
+### Exempted search engines
+
+The module exempts by ip/cidr only: a user agent is declarative, so it cannot be
+opposed to a scraper that presents itself as a browser. **Without exemption, the
+search engines receive the javascript challenge, do not solve it, and stop
+indexing the site.**
+
+The ip ranges of eight engines are bundled with the module (Googlebot, Bingbot,
+Applebot, DuckDuckBot, Qwant, MojeekBot, Marginalia, Yandex) and selectable with
+checkboxes. All but Yandex are exempted by default. Sources are first-hand when
+the operator publishes one (Google, Bing and Apple publish a json), else the
+[GoodBots] aggregate. Qwant publishes no list, so the prefix announced by its
+autonomous system is used (AS199064).
+
+Some indexers are not bundled deliberately: Common Crawl (training corpus, not a
+search engine), the commercial seo crawlers (Ahrefs, Semrush) and the ones that
+use a cdn, since it would allow anyone routing requests through it.
+
+The lists move, so a job refreshes them from their sources via a job that can
+be run from the config form.
 
 
 TODO
@@ -142,9 +167,10 @@ The idea of this modules comes from a [thread in omeka forum].
 [AtoM]: https://www.accesstomemory.org/en/docs/2.10/admin-manual/security/js-challenge
 [Wordpress]: https://wordpress.org/plugins/wordfence
 [Drupal]: https://www.drupal.org/project/antibot
+[GoodBots]: https://github.com/AnTheMaker/GoodBots
 [Mediawiki]: https://www.mediawiki.org/wiki/API:Ratelimit
 [Wordpress blackhole]: https://wordpress.org/plugins/blackhole-bad-bots
-[pull request #2432]: https://github.com/omeka/omeka-s/pull/2432 
+[pull request #2432]: https://github.com/omeka/omeka-s/pull/2432
 [BotChallenge.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-BotChallenge/-/releases
 [thread in omeka forum]: https://forum.omeka.org/t/inquiry-about-bot-traffic-control-in-omeka-classic/28800
 [installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
