@@ -23,9 +23,7 @@ if (version_compare($oldVersion, '3.4.2', '<')) {
 }
 
 if (version_compare($oldVersion, '3.4.3', '<')) {
-    // The ip ranges of the search engines are now bundled and selected with
-    // checkboxes. The manual list is kept as is: it may contain the ranges of
-    // the institution itself, so nothing can be removed from it safely.
+    // The ip ranges of the search engines are now bundled.
     $bots = $configLocal['botchallenge']['config']['botchallenge_exception_bots'];
     $exceptionIps = $settings->get('botchallenge_exception_ips') ?: [];
 
@@ -35,4 +33,11 @@ if (version_compare($oldVersion, '3.4.3', '<')) {
         Stdlib\BotIps::ipsForBots($bots),
         $exceptionIps
     ))));
+
+    // New default exception paths.
+    $exceptionPaths = $settings->get('botchallenge_exception_paths')
+        ?? $configLocal['botchallenge']['config']['botchallenge_exception_paths'];
+    $exceptionPaths = array_unique(array_merge($exceptionPaths, $configLocal['botchallenge']['config']['botchallenge_exception_paths']));
+    sort($exceptionPaths);
+    $settings->set('botchallenge_exception_paths', $exceptionPaths);
 }
