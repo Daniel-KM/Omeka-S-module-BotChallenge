@@ -107,7 +107,30 @@ class Module extends AbstractModule
         $settings->set('botchallenge_cookie_lifetime', (int) $formData['botchallenge_cookie_lifetime']);
         $settings->set('botchallenge_test_headless', (bool) $formData['botchallenge_test_headless']);
         $settings->set('botchallenge_exception_paths', $formData['botchallenge_exception_paths'] ?? []);
-        $settings->set('botchallenge_exception_ips', $formData['botchallenge_exception_ips'] ?? []);
+
+        $bots = array_values(array_intersect(
+            $formData['botchallenge_exception_bots'] ?? [],
+            array_keys(Stdlib\BotIps::BOTS)
+        ));
+        $exceptionIps = $formData['botchallenge_exception_ips'] ?? [];
+        $settings->set('botchallenge_exception_bots', $bots);
+        $settings->set('botchallenge_exception_ips', $exceptionIps);
+
+        // The ranges of the bots and the manual ones are merged once here, so
+        // the check of each request reads a single list.
+        $settings->set('botchallenge_exception_ips_all', array_values(array_unique(array_merge(
+            Stdlib\BotIps::ipsForBots($bots),
+            $exceptionIps
+        ))));
+
+        if (!empty($formData['botchallenge_refresh_ips'])) {
+            $job = $this->getServiceLocator()->get('Omeka\Job\Dispatcher')
+                ->dispatch(Job\RefreshBotIps::class);
+            $controller->messenger()->addSuccess(sprintf(
+                'Updating the ip ranges of the search engines in the background (job %s).', // @translate
+                $job->getId()
+            ));
+        }
 
         return true;
     }

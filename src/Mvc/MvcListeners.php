@@ -90,7 +90,10 @@ class MvcListeners extends AbstractListenerAggregate
 
         // Skip exception ips.
         $clientIp = $this->getClientIp($event);
-        $exceptionIps = $this->settings->get('botchallenge_exception_ips', []);
+        // The merged list is prepared when the config is saved; fall back to
+        // the manual ranges when the config was never saved.
+        $exceptionIps = $this->settings->get('botchallenge_exception_ips_all')
+            ?: $this->settings->get('botchallenge_exception_ips', []);
         foreach ($exceptionIps as $exceptionIp) {
             if ($exceptionIp !== '' && $this->ipInCidr($clientIp, $exceptionIp)) {
                 return;

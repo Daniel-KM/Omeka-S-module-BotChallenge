@@ -65,7 +65,11 @@ return [
                 '/oai',
                 '/sparql',
             ],
+            'botchallenge_exception_bots' => \BotChallenge\Stdlib\BotIps::DEFAULT_BOTS,
             'botchallenge_exception_ips' => [],
+            // Ranges of the exempted bots and manual ranges, merged when the
+            // config is saved and read by the listener of each request.
+            'botchallenge_exception_ips_all' => [],
         ],
     ],
 ];
