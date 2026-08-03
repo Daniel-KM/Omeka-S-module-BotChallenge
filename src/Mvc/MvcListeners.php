@@ -68,6 +68,13 @@ class MvcListeners extends AbstractListenerAggregate
             return;
         }
 
+        // Skip authenticated users.
+        $authenticationService = $event->getApplication()->getServiceManager()
+            ->get('Omeka\AuthenticationService');
+        if ($authenticationService->hasIdentity()) {
+            return;
+        }
+
         // Skip exception paths (relative to the base path).
         $path = $event->getRequest()->getUri()->getPath();
         $basePath = $event->getRequest()->getBasePath();
