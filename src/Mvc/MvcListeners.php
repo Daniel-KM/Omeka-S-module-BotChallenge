@@ -53,6 +53,8 @@ class MvcListeners extends AbstractListenerAggregate
             'create-password',
             'forgot-password',
             'bot-challenge',
+            // Machine endpoints served by a route, not by a path prefix.
+            'site/sitemap',
         ];
         if (in_array($routeName, $excludedRoutes)) {
             return;
