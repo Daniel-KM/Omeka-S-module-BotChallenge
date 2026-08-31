@@ -55,7 +55,7 @@ return [
         'config' => [
             'botchallenge_salt' => '',
             'botchallenge_delay' => 5,
-            'botchallenge_cookie_lifetime' => 90,
+            'botchallenge_cookie_lifetime' => 7,
             'botchallenge_test_headless' => true,
             // Machine endpoints and token authorized links, where a browser
             // challenge is meaningless or harmful.

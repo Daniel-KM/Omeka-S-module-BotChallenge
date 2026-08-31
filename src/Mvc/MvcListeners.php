@@ -109,24 +109,35 @@ class MvcListeners extends AbstractListenerAggregate
             }
         }
 
-        // Check cookie: format is "{microtime}_{hmac}".
+        // Check cookie: format is "{timestamp}_{hmac}".
         $cookie = $event->getRequest()->getCookie();
         $cookieValue = $cookie && $cookie->offsetExists('omeka_bot_challenge')
             ? $cookie->offsetGet('omeka_bot_challenge')
             : '';
         $pos = strrpos($cookieValue, '_');
         if ($pos !== false) {
-            $salt = $this->settings->get('botchallenge_salt', '');
-            $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 90) * 86400;
+            $salt = (string) $this->settings->get('botchallenge_salt', '');
+            $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 7) * 86400;
             $timestamp = substr($cookieValue, 0, $pos);
             $hmac = substr($cookieValue, $pos + 1);
-            $expectedHmac = hash_hmac('sha256', $salt . $timestamp, $salt);
-            // microtime() format: "0.12345678 1234567890"; seconds
-            // are after the space.
-            $seconds = (int) substr($timestamp, strpos($timestamp, ' ') + 1);
+            $headers = $event->getRequest()->getHeaders();
+            $userAgent = $headers->has('User-Agent')
+                ? (string) $headers->get('User-Agent')->getFieldValue()
+                : '';
+            $expectedHmac = \BotChallenge\Controller\IndexController::signature($timestamp, $userAgent, $salt);
+            $seconds = (int) $timestamp;
+            $age = time() - $seconds;
             if (hash_equals($expectedHmac, $hmac)
-                && time() - $seconds <= $cookieLifetime
+                && $age >= 0
+                && $age <= $cookieLifetime
             ) {
+                // Sliding window: the lifetime is sealed in the cookie, so a
+                // regular visitor would be challenged again on a fixed date
+                // whatever its activity. Renew it once it is half spent, so
+                // only an inactive visitor is challenged again.
+                if ($age > $cookieLifetime / 2) {
+                    $this->renewCookie($event, $salt, $userAgent, $cookieLifetime);
+                }
                 return;
             }
         }
@@ -142,6 +153,41 @@ class MvcListeners extends AbstractListenerAggregate
         $response->getHeaders()->addHeaderLine('Location', $url);
         $response->setStatusCode(302);
         return $response;
+    }
+
+    /**
+     * Renew the cookie of a visitor that is still active.
+     */
+    protected function renewCookie(MvcEvent $event, string $salt, string $userAgent, int $cookieLifetime): void
+    {
+        $request = $event->getRequest();
+        $timestamp = (string) time();
+        $token = $timestamp . '_'
+            . \BotChallenge\Controller\IndexController::signature($timestamp, $userAgent, $salt);
+
+        $isHttps = false;
+        $server = $request->getServer();
+        if (!empty($server['HTTPS']) && strtolower((string) $server['HTTPS']) !== 'off') {
+            $isHttps = true;
+        } elseif ($request->getHeaders()->has('X-Forwarded-Proto')) {
+            $isHttps = strtolower($request->getHeaders()->get('X-Forwarded-Proto')->getFieldValue()) === 'https';
+        } elseif (($server['SERVER_PORT'] ?? null) === '443') {
+            $isHttps = true;
+        }
+
+        $setCookie = new \Laminas\Http\Header\SetCookie(
+            'omeka_bot_challenge',
+            $token,
+            time() + $cookieLifetime,
+            rtrim($request->getBasePath(), '/') . '/',
+            null,
+            $isHttps,
+            true,
+            null,
+            null,
+            'Lax'
+        );
+        $event->getResponse()->getHeaders()->addHeader($setCookie);
     }
 
     /**

@@ -2,12 +2,19 @@
 
 namespace BotChallenge\Controller;
 
+use Laminas\Http\Header\SetCookie;
 use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\Session\Container as SessionContainer;
 use Laminas\View\Model\ViewModel;
 use Omeka\Settings\Settings;
 
 class IndexController extends AbstractActionController
 {
+    /**
+     * Time to solve the challenge, so a harvested nonce is quickly useless.
+     */
+    const NONCE_LIFETIME = 600;
+
     /**
      * @var \Omeka\Settings\Settings
      */
@@ -20,10 +27,18 @@ class IndexController extends AbstractActionController
 
     public function indexAction()
     {
-        $salt = $this->settings->get('botchallenge_salt', '');
-        $timestamp = (string) microtime();
-        $hmac = hash_hmac('sha256', $salt . $timestamp, $salt);
-        $token = $timestamp . '_' . $hmac;
+        // The cookie is delivered by verifyAction() only, after the client
+        // posted back the nonce: a plain GET on this page must not return
+        // anything usable, else the challenge is only a decoration and the
+        // token can be harvested with a single request.
+        if ($this->getRequest()->isPost()) {
+            return $this->verify();
+        }
+
+        $session = new SessionContainer('BotChallenge');
+        $nonce = bin2hex(random_bytes(16));
+        $session->nonce = $nonce;
+        $session->nonceTime = time();
 
         // Validate redirect url: must start with "/" and not "//".
         $basePath = $this->getRequest()->getBasePath();
@@ -51,8 +66,6 @@ class IndexController extends AbstractActionController
         }
 
         $delay = (int) $this->settings->get('botchallenge_delay', 5);
-        $cookieLifetimeDays = (int) $this->settings->get('botchallenge_cookie_lifetime', 90);
-        $cookieLifetimeSeconds = $cookieLifetimeDays * 86400;
         $testHeadless = (bool) $this->settings->get('botchallenge_test_headless', true);
 
         // Prevent caching.
@@ -62,9 +75,8 @@ class IndexController extends AbstractActionController
             ->addHeaderLine('Pragma', 'no-cache');
 
         $view = new ViewModel([
-            'token' => $token,
+            'nonce' => $nonce,
             'delay' => $delay,
-            'cookieLifetime' => $cookieLifetimeSeconds,
             'redirectUrl' => $redirectUrl,
             'isHttps' => $isHttps,
             'testHeadless' => $testHeadless,
@@ -73,4 +85,100 @@ class IndexController extends AbstractActionController
             ->setTerminal(true);
     }
 
+    /**
+     * Check the nonce posted by the client and deliver the cookie.
+     *
+     * The nonce is single use and tied to the session, so the cookie cannot be
+     * obtained with a single request, and a harvested page is useless without
+     * its session.
+     */
+    protected function verify()
+    {
+        $response = $this->getResponse();
+        $response->getHeaders()
+            ->addHeaderLine('Cache-Control', 'no-store, no-cache, must-revalidate')
+            ->addHeaderLine('Content-Type', 'application/json');
+
+        $session = new SessionContainer('BotChallenge');
+        $expected = (string) ($session->nonce ?? '');
+        $nonceTime = (int) ($session->nonceTime ?? 0);
+
+        // Single use: consume the nonce whatever the result, so a failed or
+        // replayed check requires a new challenge page.
+        unset($session->nonce, $session->nonceTime);
+
+        $posted = (string) $this->params()->fromPost('nonce', '');
+        if ($expected === ''
+            || !hash_equals($expected, $posted)
+            || time() - $nonceTime > self::NONCE_LIFETIME
+        ) {
+            $response->setStatusCode(403);
+            $response->setContent(json_encode(['status' => 'error']));
+            return $response;
+        }
+
+        $salt = (string) $this->settings->get('botchallenge_salt', '');
+        $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 7) * 86400;
+        $userAgent = $this->userAgent();
+        // Seconds only: microtime() holds a space, that is encoded as "+" in
+        // the cookie and not decoded back, so the signature never matched.
+        $timestamp = (string) time();
+        $token = $timestamp . '_' . self::signature($timestamp, $userAgent, $salt);
+
+        // The cookie is set by the server, so it can be http only: the client
+        // never needs to read it.
+        $setCookie = new SetCookie(
+            'omeka_bot_challenge',
+            $token,
+            time() + $cookieLifetime,
+            rtrim($this->getRequest()->getBasePath(), '/') . '/',
+            null,
+            $this->isHttps(),
+            true,
+            null,
+            null,
+            'Lax'
+        );
+        $response->getHeaders()->addHeader($setCookie);
+        $response->setContent(json_encode(['status' => 'success']));
+        return $response;
+    }
+
+    /**
+     * Sign a token for a user agent.
+     *
+     * The user agent is included, so a cookie shared with another client is
+     * refused. The ip is not included: it changes too often (mobile network,
+     * cgnat, rotating ipv6) to be usable with a long lived cookie.
+     *
+     * @see \BotChallenge\Mvc\MvcListeners::signature()
+     */
+    public static function signature(string $timestamp, string $userAgent, string $salt): string
+    {
+        return hash_hmac('sha256', $timestamp . "\n" . $userAgent, $salt);
+    }
+
+    protected function userAgent(): string
+    {
+        $headers = $this->getRequest()->getHeaders();
+        return $headers->has('User-Agent')
+            ? (string) $headers->get('User-Agent')->getFieldValue()
+            : '';
+    }
+
+    protected function isHttps(): bool
+    {
+        $request = $this->getRequest();
+        $server = $request->getServer();
+        if (!empty($server['HTTPS']) && strtolower((string) $server['HTTPS']) !== 'off') {
+            return true;
+        }
+        $headers = $request->getHeaders();
+        if ($headers->has('X-Forwarded-Proto')
+            && strtolower($headers->get('X-Forwarded-Proto')->getFieldValue()) === 'https'
+        ) {
+            return true;
+        }
+        return ($server['SERVER_PORT'] ?? null) === '443';
+    }
 }
