@@ -2,118 +2,151 @@
 
 namespace BotChallengeTest\Mvc;
 
+use BotChallenge\Controller\IndexController;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests for the HMAC token logic shared between MvcListeners and IndexController.
+ * Tests for the signature shared between MvcListeners and IndexController.
  *
- * Token formula: microtime() . '_' . hash_hmac('sha256', $salt . $microtime, $salt)
+ * Token format: "{timestamp}_{signature}", where the signature covers the
+ * timestamp and the user agent, so a cookie is not usable by another client.
  *
- * @covers \BotChallenge\Mvc\MvcListeners::handleChallenge
- * @covers \BotChallenge\Controller\IndexController::indexAction
+ * The signature of the module is called directly: a test rewriting the formula
+ * would keep passing after the formula changed.
+ *
+ * @covers \BotChallenge\Controller\IndexController::signature
  */
 class TokenTest extends TestCase
 {
-    /**
-     * Generate a token using the same formula as the module.
-     */
-    protected function generateToken(string $salt, string $timestamp): string
+    const SALT = 'test-salt-abc123';
+    const AGENT = 'Mozilla/5.0 (X11; Linux x86_64)';
+
+    public function testSameInputsProduceSameSignature(): void
     {
-        $hmac = hash_hmac('sha256', $salt . $timestamp, $salt);
-        return $timestamp . '_' . $hmac;
+        $this->assertSame(
+            IndexController::signature('1700000000', self::AGENT, self::SALT),
+            IndexController::signature('1700000000', self::AGENT, self::SALT)
+        );
+    }
+
+    public function testDifferentSaltProducesDifferentSignature(): void
+    {
+        $this->assertNotSame(
+            IndexController::signature('1700000000', self::AGENT, 'salt-one'),
+            IndexController::signature('1700000000', self::AGENT, 'salt-two')
+        );
+    }
+
+    public function testDifferentTimestampProducesDifferentSignature(): void
+    {
+        $this->assertNotSame(
+            IndexController::signature('1700000000', self::AGENT, self::SALT),
+            IndexController::signature('1700000001', self::AGENT, self::SALT)
+        );
     }
 
     /**
-     * Extract the seconds from a microtime() string ("0.12345678 1234567890").
+     * The core of the fix: a cookie shared with another client is refused.
      */
-    protected function extractSeconds(string $timestamp): int
+    public function testDifferentUserAgentProducesDifferentSignature(): void
     {
-        return (int) substr($timestamp, strpos($timestamp, ' ') + 1);
+        $this->assertNotSame(
+            IndexController::signature('1700000000', self::AGENT, self::SALT),
+            IndexController::signature('1700000000', 'Some-Bot/1.0', self::SALT)
+        );
     }
 
-    public function testSameInputsProduceSameToken(): void
+    public function testEmptyUserAgentIsSupported(): void
     {
-        $salt = 'test-salt-abc123';
-        $ts = '0.12345678 1700000000';
-        $token1 = $this->generateToken($salt, $ts);
-        $token2 = $this->generateToken($salt, $ts);
-        $this->assertSame($token1, $token2);
+        $signature = IndexController::signature('1700000000', '', self::SALT);
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $signature);
     }
 
-    public function testDifferentSaltProducesDifferentToken(): void
+    public function testSignatureFormat(): void
     {
-        $ts = '0.12345678 1700000000';
-        $token1 = $this->generateToken('salt-one', $ts);
-        $token2 = $this->generateToken('salt-two', $ts);
-        $this->assertNotSame($token1, $token2);
+        $signature = IndexController::signature('1700000000', self::AGENT, self::SALT);
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $signature);
     }
 
-    public function testDifferentTimestampProducesDifferentToken(): void
+    /**
+     * The timestamp must hold no space: it is encoded as "+" in the cookie and
+     * not decoded back, so the signature would never match.
+     */
+    public function testTokenHasNoSpace(): void
     {
-        $salt = 'same-salt';
-        $token1 = $this->generateToken($salt, '0.12345678 1700000000');
-        $token2 = $this->generateToken($salt, '0.98765432 1700000001');
-        $this->assertNotSame($token1, $token2);
+        $timestamp = (string) time();
+        $token = $timestamp . '_' . IndexController::signature($timestamp, self::AGENT, self::SALT);
+        $this->assertStringNotContainsString(' ', $token);
+        $this->assertMatchesRegularExpression('/^\d+_[0-9a-f]{64}$/', $token);
     }
 
-    public function testTokenFormat(): void
-    {
-        $token = $this->generateToken('any-salt', '0.12345678 1700000000');
-        // Format: "microtime_hmac" where hmac is 64 hex chars.
-        $this->assertMatchesRegularExpression('/^[\d.]+ \d+_[0-9a-f]{64}$/', $token);
-    }
-
+    /**
+     * Validation as done by MvcListeners.
+     */
     public function testValidation(): void
     {
-        $salt = 'secret-salt';
-        $ts = (string) microtime();
-        $token = $this->generateToken($salt, $ts);
+        $timestamp = (string) time();
+        $token = $timestamp . '_' . IndexController::signature($timestamp, self::AGENT, self::SALT);
 
-        // Parse like MvcListeners does.
         $pos = strrpos($token, '_');
         $this->assertNotFalse($pos);
-        $parsedTs = substr($token, 0, $pos);
-        $parsedHmac = substr($token, $pos + 1);
+        $parsedTimestamp = substr($token, 0, $pos);
+        $parsedSignature = substr($token, $pos + 1);
 
-        $expectedHmac = hash_hmac('sha256', $salt . $parsedTs, $salt);
-        $this->assertTrue(hash_equals($expectedHmac, $parsedHmac));
+        $this->assertTrue(hash_equals(
+            IndexController::signature($parsedTimestamp, self::AGENT, self::SALT),
+            $parsedSignature
+        ));
+        $this->assertSame(time(), (int) $parsedTimestamp);
     }
 
     public function testRejectsWrongSalt(): void
     {
-        $ts = (string) microtime();
-        $token = $this->generateToken('correct-salt', $ts);
+        $timestamp = (string) time();
+        $signature = IndexController::signature($timestamp, self::AGENT, 'correct-salt');
 
-        $pos = strrpos($token, '_');
-        $parsedTs = substr($token, 0, $pos);
-        $parsedHmac = substr($token, $pos + 1);
-
-        $wrongHmac = hash_hmac('sha256', 'wrong-salt' . $parsedTs, 'wrong-salt');
-        $this->assertFalse(hash_equals($wrongHmac, $parsedHmac));
+        $this->assertFalse(hash_equals(
+            IndexController::signature($timestamp, self::AGENT, 'wrong-salt'),
+            $signature
+        ));
     }
 
-    public function testExtractSeconds(): void
+    /**
+     * The ip is added to the signature only when the option is set.
+     */
+    public function testIpIsNotInTheSignatureByDefault(): void
     {
-        $seconds = $this->extractSeconds('0.12345678 1700000000');
-        $this->assertSame(1700000000, $seconds);
+        $this->assertSame(
+            IndexController::signature('1700000000', self::AGENT, self::SALT),
+            IndexController::signature('1700000000', self::AGENT, self::SALT, '')
+        );
     }
 
-    public function testExpirationCheck(): void
+    public function testDifferentIpProducesDifferentSignature(): void
     {
-        $ts = '0.12345678 ' . (time() - 100);
-        $cookieLifetime = 86400;
-        $seconds = $this->extractSeconds($ts);
-        $this->assertTrue(time() - $seconds <= $cookieLifetime);
-
-        // Expired token.
-        $tsOld = '0.12345678 ' . (time() - 200000);
-        $secondsOld = $this->extractSeconds($tsOld);
-        $this->assertFalse(time() - $secondsOld <= $cookieLifetime);
+        $this->assertNotSame(
+            IndexController::signature('1700000000', self::AGENT, self::SALT, '10.0.0.1'),
+            IndexController::signature('1700000000', self::AGENT, self::SALT, '10.0.0.2')
+        );
     }
 
-    public function testEmptySaltStillProducesValidToken(): void
+    public function testEnablingTheIpInvalidatesTheCookies(): void
     {
-        $token = $this->generateToken('', '0.12345678 1700000000');
-        $this->assertMatchesRegularExpression('/^[\d.]+ \d+_[0-9a-f]{64}$/', $token);
+        $this->assertNotSame(
+            IndexController::signature('1700000000', self::AGENT, self::SALT),
+            IndexController::signature('1700000000', self::AGENT, self::SALT, '10.0.0.1')
+        );
+    }
+
+    public function testRejectsSharedCookie(): void
+    {
+        $timestamp = (string) time();
+        $signature = IndexController::signature($timestamp, self::AGENT, self::SALT);
+
+        // Another client replaying the very same cookie.
+        $this->assertFalse(hash_equals(
+            IndexController::signature($timestamp, 'Another-Client/2.0', self::SALT),
+            $signature
+        ));
     }
 }

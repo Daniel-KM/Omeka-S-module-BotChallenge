@@ -2,6 +2,7 @@
 
 namespace BotChallengeTest\Controller;
 
+use BotChallenge\Controller\IndexController;
 use CommonTest\AbstractHttpControllerTestCase;
 
 /**
@@ -31,9 +32,11 @@ class IndexControllerTest extends AbstractHttpControllerTestCase
     {
         $this->dispatch('/bot-challenge');
         $body = $this->getResponse()->getBody();
-        $this->assertStringContainsString('omeka_bot_challenge', $body);
         $this->assertStringContainsString('setInterval', $body);
-        $this->assertStringContainsString('document.cookie', $body);
+        // The client posts the nonce back and the server sets the cookie, so
+        // the page never writes the cookie by itself.
+        $this->assertStringContainsString('fetch(', $body);
+        $this->assertStringNotContainsString('document.cookie', $body);
     }
 
     public function testDefaultRedirectUrl(): void
@@ -95,11 +98,62 @@ class IndexControllerTest extends AbstractHttpControllerTestCase
         $this->assertStringContainsString('no-cache', $cacheControl->getFieldValue());
     }
 
-    public function testTokenPresentInBody(): void
+    public function testNoncePresentInBody(): void
     {
         $this->dispatch('/bot-challenge');
         $body = $this->getResponse()->getBody();
-        // Token is "microtime_hmac": e.g. "0.12345678 1234567890_abc...def".
-        $this->assertMatchesRegularExpression('/var token = "[\d.]+ \d+_[0-9a-f]{64}"/', $body);
+        $this->assertMatchesRegularExpression('/var nonce = "[0-9a-f]{32}"/', $body);
+    }
+
+    /**
+     * The page used to print a valid token, so the cookie could be harvested
+     * with a single request and shared with any other client.
+     */
+    public function testGetDeliversNoUsableToken(): void
+    {
+        $this->dispatch('/bot-challenge');
+        $body = $this->getResponse()->getBody();
+
+        // No signed token: a token is "{timestamp}_{64 hex}".
+        $this->assertDoesNotMatchRegularExpression('/\d{10}_[0-9a-f]{64}/', $body);
+        $this->assertStringNotContainsString('omeka_bot_challenge', $body);
+
+        // And no cookie is set by the response either.
+        $setCookie = $this->getResponse()->getHeaders()->get('Set-Cookie');
+        $cookies = $setCookie === false ? [] : (is_array($setCookie) ? $setCookie : [$setCookie]);
+        foreach ($cookies as $cookie) {
+            $this->assertNotSame('omeka_bot_challenge', $cookie->getName());
+        }
+    }
+
+    public function testPostWithoutNonceIsRefused(): void
+    {
+        $this->dispatch('/bot-challenge', 'POST', ['nonce' => 'not-a-valid-nonce']);
+        $this->assertResponseStatusCode(403);
+    }
+
+    /**
+     * The countdown is run by the client, so the delay is checked by the
+     * server too: else a client posting the nonce immediately gets the cookie.
+     *
+     * @dataProvider provideDelays
+     */
+    public function testDelayIsCheckedByTheServer(int $elapsed, int $delay, bool $tooEarly): void
+    {
+        $this->assertSame($tooEarly, IndexController::isTooEarly($elapsed, $delay));
+    }
+
+    public function provideDelays(): array
+    {
+        return [
+            'immediate answer of a bot' => [0, 5, true],
+            'answer far too early' => [1, 5, true],
+            'answer just too early' => [3, 5, true],
+            'one second short, tolerated' => [4, 5, false],
+            'answer on time' => [5, 5, false],
+            'answer after the delay' => [30, 5, false],
+            'no delay configured' => [0, 0, false],
+            'delay of one second' => [0, 1, false],
+        ];
     }
 }
