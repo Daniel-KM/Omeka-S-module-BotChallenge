@@ -3,12 +3,12 @@
 namespace BotChallenge;
 
 use BotChallenge\Controller\IndexController;
-use Common\Stdlib\PsrMessage;
 use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Module\AbstractModule;
+use Omeka\Stdlib\Message;
 
 // The module namespace is not registered by Omeka while the module is inactive,
 // but the config file and the upgrade script reference BotIps.
@@ -136,16 +136,14 @@ class Module extends AbstractModule
             $messenger = $controller->plugin('messenger');
             $job = $services->get('Omeka\Job\Dispatcher')
                 ->dispatch(Job\RefreshBotIps::class);
-            $message = new PsrMessage(
-                    'Updating the ip ranges of the search engines in a background job ({link_job}job #{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
-                    [
-                        'link_job' => sprintf('<a href="%s">', htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))),
-                        'job_id' => $job->getId(),
-                        'link_end' => '</a>',
-                        'link_log' => class_exists('Log\Module', false)
-                            ? sprintf('<a href="%1$s">', htmlspecialchars($urlPlugin->fromRoute('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]])))
-                            : sprintf('<a href="%1$s" target="_blank" rel="noopener noreferrer">', htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()]))),
-                    ]
+            $message = new Message(
+                    'Updating the ip ranges of the search engines in a background job (%1$sjob #%2$s%3$s, %4$slogs%3$s).', // @translate
+                    sprintf('<a href="%s">', htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))),
+                    $job->getId(),
+                    '</a>',
+                    class_exists('Log\Module', false)
+                        ? sprintf('<a href="%1$s">', htmlspecialchars($urlPlugin->fromRoute('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]])))
+                        : sprintf('<a href="%1$s" target="_blank" rel="noopener noreferrer">', htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])))
                 );
             $message->setEscapeHtml(false);
             $messenger->addSuccess($message);
