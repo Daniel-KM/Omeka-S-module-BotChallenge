@@ -9,11 +9,11 @@ Bot Challenge (module for Omeka S)
 automated bots using a self-hosted JavaScript challenge. It does not depend on
 any third piracy service (google, cloudflare, etc.), so it is GDPR compliant.
 
-Visitors without a valid cookie are redirected to a verification page where a
-JavaScript challenge must be completed with an HMAC-SHA256 token computed with
-the visitor ip. Bots, most of whom can't execute javascript currently, remain
-trapped in a redirect loop and cannot crawl the site. The module also detects
-headless browsers (Selenium, Puppeteer, PhantomJS, etc.).
+Visitors without a valid cookie are redirected to a verification page, where a
+javascript challenge must be completed to get one. Bots, most of whom can't
+execute javascript currently, remain trapped in a redirect loop and cannot crawl
+the site. The module also detects headless browsers (Selenium, Puppeteer,
+PhantomJS, etc.).
 
 It is inspired by the mechanism used in [AtoM] (Access to Memory) and many
 similar tools (wordfence [Wordpress], antibot [Drupal], etc.).
@@ -67,7 +67,13 @@ The configuration can be adjusted in the module config form.
 
 - HMAC salt: token used for test (leave empty to autogenerate one)
 - Challenge delay: Time the visitor must wait (5 seconds)
-- Cookie lifetime: How long the challenge cookie remains valid (90 days)
+- Cookie lifetime: How long the challenge cookie remains valid (7 days). The
+  cookie is renewed once half of its lifetime is spent, so an active visitor is
+  never challenged again; only an inactive one is.
+- Bind the cookie to the ip: add the ip to the signature, so a cookie shared
+  with another machine is refused. Disabled by default, and only relevant on a
+  controlled network: see the limits below. Toggling it invalidates all
+  cookies.
 - Detect headless browsers: Run additional tests for headless environments
 - Exception paths: /api, /api-local
 - Exempted search engines: check the engines whose published ip ranges are
@@ -75,6 +81,49 @@ The configuration can be adjusted in the module config form.
 - Update the ip ranges now: run a job to refresh the bundled ranges
 - Exception ips: list of IPv4/IPv6/cidr ranges, added to the ranges of the
   engines above: the networks of the institution, a partner harvester, etc.
+
+### How the challenge works
+
+1. A visitor without a valid cookie is redirected to the challenge page, that
+   holds a single use nonce, tied to the session. The page delivers no cookie:
+   a plain request returns nothing usable.
+2. The javascript checks the browser (headless detection), waits for the delay,
+   then posts the nonce back.
+3. The server checks the nonce, consumes it, and sets the cookie itself. So the
+   cookie is `HttpOnly`: the client never needs to read it.
+
+The cookie holds a timestamp and a signature (HMAC-SHA256) covering that
+timestamp and the user agent, with the salt as key. Binding the user agent
+prevents a cookie from being shared: a cookie obtained once and distributed to
+other clients is refused.
+
+The ip is not part of the signature by default. It can be added with the option
+above, but it has two limits, so it is only relevant on a controlled network
+(intranet, institution with a fixed egress), where the ips are stable and where
+sharing a cookie between machines is precisely what should be forbidden.
+
+**The ip changes although the visitor did not move.** The privacy extensions of
+ipv6 rotate the address of a desktop, usually every day. A dual stack client
+may exit in ipv4 or in ipv6 for the same site. A residential ip is renewed when
+the router restarts. The icloud private relay, a vpn or tor change the egress,
+sometimes between two connections. An university or a company may have several
+egress ips in load balancing. A mobile network is only one case among others.
+
+**The ip is shared by different visitors.** Behind a mobile cgnat or the nat of
+a library, a school or an university — the very public of Omeka S — thousands of
+people go out with the same ip, and a cookie shared inside that perimeter passes
+the check anyway.
+
+So the option refuses legitimate visitors that did nothing, and still accepts a
+cookie shared between colocated machines.
+
+The delay of the countdown is checked by the server too: the page runs it, so
+without this check a client posting the answer immediately would get a cookie.
+
+Note that this binding is not a proof of identity, since a user agent is
+declarative: a client copying the header along with the cookie would pass. The
+barrier is the nonce, that forces each client to hold a session and to make the
+round trip.
 
 ### Exempted search engines
 
@@ -116,6 +165,9 @@ your archives regularly so you can roll back if needed.
 
 Changing the salt invalidates all existing cookies: every visitor will need to
 complete the challenge again.
+
+The cookie is bound to the user agent, so a visitor updating its browser
+completes the challenge again.
 
 
 Troubleshooting
