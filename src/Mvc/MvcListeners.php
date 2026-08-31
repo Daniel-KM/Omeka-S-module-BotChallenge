@@ -124,7 +124,10 @@ class MvcListeners extends AbstractListenerAggregate
             $userAgent = $headers->has('User-Agent')
                 ? (string) $headers->get('User-Agent')->getFieldValue()
                 : '';
-            $expectedHmac = \BotChallenge\Controller\IndexController::signature($timestamp, $userAgent, $salt);
+            $ip = $this->settings->get('botchallenge_bind_ip', false)
+                ? \BotChallenge\Stdlib\ClientIp::fromRequest($event->getRequest())
+                : '';
+            $expectedHmac = \BotChallenge\Controller\IndexController::signature($timestamp, $userAgent, $salt, $ip);
             $seconds = (int) $timestamp;
             $age = time() - $seconds;
             if (hash_equals($expectedHmac, $hmac)
@@ -136,7 +139,7 @@ class MvcListeners extends AbstractListenerAggregate
                 // whatever its activity. Renew it once it is half spent, so
                 // only an inactive visitor is challenged again.
                 if ($age > $cookieLifetime / 2) {
-                    $this->renewCookie($event, $salt, $userAgent, $cookieLifetime);
+                    $this->renewCookie($event, $salt, $userAgent, $cookieLifetime, $ip);
                 }
                 return;
             }
@@ -158,12 +161,12 @@ class MvcListeners extends AbstractListenerAggregate
     /**
      * Renew the cookie of a visitor that is still active.
      */
-    protected function renewCookie(MvcEvent $event, string $salt, string $userAgent, int $cookieLifetime): void
+    protected function renewCookie(MvcEvent $event, string $salt, string $userAgent, int $cookieLifetime, string $ip = ''): void
     {
         $request = $event->getRequest();
         $timestamp = (string) time();
         $token = $timestamp . '_'
-            . \BotChallenge\Controller\IndexController::signature($timestamp, $userAgent, $salt);
+            . \BotChallenge\Controller\IndexController::signature($timestamp, $userAgent, $salt, $ip);
 
         $isHttps = false;
         $server = $request->getServer();
@@ -195,25 +198,7 @@ class MvcListeners extends AbstractListenerAggregate
      */
     protected function getClientIp(MvcEvent $event): string
     {
-        $request = $event->getRequest();
-        $headers = $request->getHeaders();
-
-        if ($headers->has('X-Forwarded-For')) {
-            $ips = $headers->get('X-Forwarded-For')->getFieldValue();
-            $ip = trim(explode(',', $ips)[0]);
-            if ($ip !== '') {
-                return $ip;
-            }
-        }
-
-        if ($headers->has('X-Real-IP')) {
-            $ip = trim($headers->get('X-Real-IP')->getFieldValue());
-            if ($ip !== '') {
-                return $ip;
-            }
-        }
-
-        return $request->getServer('REMOTE_ADDR', '127.0.0.1');
+        return \BotChallenge\Stdlib\ClientIp::fromRequest($event->getRequest());
     }
 
     /**

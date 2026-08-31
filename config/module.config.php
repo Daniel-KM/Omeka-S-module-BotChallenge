@@ -57,6 +57,7 @@ return [
             'botchallenge_delay' => 5,
             'botchallenge_cookie_lifetime' => 7,
             'botchallenge_test_headless' => true,
+            'botchallenge_bind_ip' => false,
             // Machine endpoints and token authorized links, where a browser
             // challenge is meaningless or harmful.
             'botchallenge_exception_paths' => [

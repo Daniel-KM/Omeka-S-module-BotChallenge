@@ -140,10 +140,13 @@ class IndexController extends AbstractActionController
         $salt = (string) $this->settings->get('botchallenge_salt', '');
         $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 7) * 86400;
         $userAgent = $this->userAgent();
+        $ip = $this->settings->get('botchallenge_bind_ip', false)
+            ? \BotChallenge\Stdlib\ClientIp::fromRequest($this->getRequest())
+            : '';
         // Seconds only: microtime() holds a space, that is encoded as "+" in
         // the cookie and not decoded back, so the signature never matched.
         $timestamp = (string) time();
-        $token = $timestamp . '_' . self::signature($timestamp, $userAgent, $salt);
+        $token = $timestamp . '_' . self::signature($timestamp, $userAgent, $salt, $ip);
 
         // The cookie is set by the server, so it can be http only: the client
         // never needs to read it.
@@ -176,17 +179,16 @@ class IndexController extends AbstractActionController
     }
 
     /**
-     * Sign a token for a user agent.
+     * Sign a token for a client.
      *
      * The user agent is included, so a cookie shared with another client is
-     * refused. The ip is not included: it changes too often (mobile network,
-     * cgnat, rotating ipv6) to be usable with a long lived cookie.
-     *
-     * @see \BotChallenge\Mvc\MvcListeners::signature()
+     * refused. The ip is included only when the option is set: it changes too
+     * often (mobile network, cgnat, rotating ipv6) to be used by default with
+     * a cookie living several days.
      */
-    public static function signature(string $timestamp, string $userAgent, string $salt): string
+    public static function signature(string $timestamp, string $userAgent, string $salt, string $ip = ''): string
     {
-        return hash_hmac('sha256', $timestamp . "\n" . $userAgent, $salt);
+        return hash_hmac('sha256', $timestamp . "\n" . $userAgent . "\n" . $ip, $salt);
     }
 
     protected function userAgent(): string

@@ -49,6 +49,17 @@ class ConfigForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'botchallenge_bind_ip',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Bind the cookie to the ip', // @translate
+                    'info' => 'Add the ip to the signature, so a cookie shared with another machine is refused. Only for a controlled network: an ip changes without the visitor moving (ipv6 rotation, dual stack, private relay, vpn) and is shared by many visitors behind a nat. Toggling it invalidates all cookies.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'botchallenge_bind_ip',
+                ],
+            ])
+            ->add([
                 'name' => 'botchallenge_test_headless',
                 'type' => Element\Checkbox::class,
                 'options' => [
