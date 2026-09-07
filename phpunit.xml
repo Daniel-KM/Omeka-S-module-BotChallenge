@@ -11,6 +11,7 @@
         <!-- Unit tests that don't need Application (fast) -->
         <testsuite name="unit">
             <file>tests/BotChallengeTest/Mvc/IpInCidrTest.php</file>
+            <file>tests/BotChallengeTest/Mvc/PathIsExceptedTest.php</file>
             <file>tests/BotChallengeTest/Mvc/GetClientIpTest.php</file>
             <file>tests/BotChallengeTest/Mvc/TokenTest.php</file>
             <file>tests/BotChallengeTest/Stdlib/BotIpsTest.php</file>

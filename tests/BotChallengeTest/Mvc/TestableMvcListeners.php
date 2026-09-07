@@ -29,4 +29,9 @@ class TestableMvcListeners extends MvcListeners
     {
         return $this->getClientIp($event);
     }
+
+    public function publicPathIsExcepted(string $path, array $exceptionPaths): bool
+    {
+        return $this->pathIsExcepted($path, $exceptionPaths);
+    }
 }
