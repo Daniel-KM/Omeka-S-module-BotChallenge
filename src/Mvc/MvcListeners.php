@@ -83,18 +83,8 @@ class MvcListeners extends AbstractListenerAggregate
         if ($basePath !== '' && strpos($path, $basePath) === 0) {
             $path = substr($path, strlen($basePath));
         }
-        $exceptionPaths = $this->settings->get('botchallenge_exception_paths', []);
-        foreach ($exceptionPaths as $exceptionPath) {
-            // Compare on a segment boundary with final "/".
-            $exceptionPath = rtrim((string) $exceptionPath, '/');
-            if ($exceptionPath === '') {
-                continue;
-            }
-            if ($path === $exceptionPath
-                || strpos($path, $exceptionPath . '/') === 0
-            ) {
-                return;
-            }
+        if ($this->pathIsExcepted($path, $this->settings->get('botchallenge_exception_paths', []))) {
+            return;
         }
 
         // Skip exception ips.
@@ -194,8 +184,48 @@ class MvcListeners extends AbstractListenerAggregate
     }
 
     /**
-     * Get client ip, handling proxies.
+     * Whether the path matches an exception path, on a segment boundary.
+     *
+     * A prefix pattern ("/sso") matches itself and any sub-path ("/sso",
+     * "/sso/metadata"), but not a path that merely shares its prefix
+     * ("/ssoxxx"), so an exempted prefix cannot be widened by accident.
+     *
+     * A suffix pattern (a star then "/suggest") matches any path whose last
+     * segment is the given one ("/s/mysite/search/suggest"): the search routes
+     * use a configurable slug, so their machine endpoints (suggest, atom, rss)
+     * have no fixed prefix. Autocompletion in particular must never be delayed.
+     *
+     * @param string[] $exceptionPaths
      */
+    protected function pathIsExcepted(string $path, array $exceptionPaths): bool
+    {
+        foreach ($exceptionPaths as $exceptionPath) {
+            $exceptionPath = (string) $exceptionPath;
+            if ($exceptionPath !== '' && $exceptionPath[0] === '*') {
+                $segment = rtrim(substr($exceptionPath, 1), '/');
+                if ($segment === '') {
+                    continue;
+                }
+                if (substr($path, -strlen($segment)) === $segment
+                    || strpos($path, $segment . '/') !== false
+                ) {
+                    return true;
+                }
+                continue;
+            }
+            $exceptionPath = rtrim($exceptionPath, '/');
+            if ($exceptionPath === '') {
+                continue;
+            }
+            if ($path === $exceptionPath
+                || strpos($path, $exceptionPath . '/') === 0
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected function getClientIp(MvcEvent $event): string
     {
         return \BotChallenge\Stdlib\ClientIp::fromRequest($event->getRequest());

@@ -59,8 +59,15 @@ return [
             'botchallenge_test_headless' => true,
             'botchallenge_bind_ip' => false,
             // Machine endpoints and token authorized links, where a browser
-            // challenge is meaningless or harmful.
+            // challenge is meaningless or harmful or breaks the service (api,
+            // images, feeds, harvesting, callbacks, downloads).
+            // A path starting with a star matches on the last segment
+            // (search autocompletion, rss…).
+            // Exempting relaxes nothing: Omeka and Access rights still apply.
             'botchallenge_exception_paths' => [
+                '*/atom',
+                '*/rss',
+                '*/suggest',
                 '/access/files',
                 '/api',
                 '/api-local',
