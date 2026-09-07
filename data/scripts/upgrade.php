@@ -16,14 +16,6 @@ $messenger = $services->get('ControllerPluginManager')->get('messenger');
 
 $configLocal = require dirname(__DIR__, 2) . '/config/module.config.php';
 
-if (version_compare($oldVersion, '3.4.2', '<')) {
-    $exceptionPaths = $settings->get('botchallenge_exception_paths')
-        ?? $configLocal['botchallenge']['config']['botchallenge_exception_paths'];
-    $exceptionPaths = array_unique(array_merge($exceptionPaths, $configLocal['botchallenge']['config']['botchallenge_exception_paths']));
-    sort($exceptionPaths);
-    $settings->set('botchallenge_exception_paths', $exceptionPaths);
-}
-
 if (version_compare($oldVersion, '3.4.3', '<')) {
     // The ip ranges of the search engines are now bundled.
     $bots = $configLocal['botchallenge']['config']['botchallenge_exception_bots'];
@@ -35,13 +27,6 @@ if (version_compare($oldVersion, '3.4.3', '<')) {
         Stdlib\BotIps::ipsForBots($bots),
         $exceptionIps
     ))));
-
-    // New default exception paths.
-    $exceptionPaths = $settings->get('botchallenge_exception_paths')
-        ?? $configLocal['botchallenge']['config']['botchallenge_exception_paths'];
-    $exceptionPaths = array_unique(array_merge($exceptionPaths, $configLocal['botchallenge']['config']['botchallenge_exception_paths']));
-    sort($exceptionPaths);
-    $settings->set('botchallenge_exception_paths', $exceptionPaths);
 }
 
 if (version_compare($oldVersion, '3.4.4', '<')) {
@@ -74,6 +59,19 @@ foreach ($configLocal['botchallenge']['config'] as $key => $value) {
         $settings->set($key, $value);
     }
 }
+
+// Merge the default exception paths on each upgrade: they are machine endpoints
+// (api, iiif, oai, auth callbacks, protected files…) that break the service
+// when challenged, so a path added in a later version must reach existing
+// instances, which a version-gated merge would miss. Exempting them relaxes
+// nothing: the Omeka and Access rights still apply. Custom paths are kept.
+$exceptionPaths = $settings->get('botchallenge_exception_paths') ?: [];
+$exceptionPaths = array_values(array_unique(array_merge(
+    $exceptionPaths,
+    $configLocal['botchallenge']['config']['botchallenge_exception_paths']
+)));
+sort($exceptionPaths);
+$settings->set('botchallenge_exception_paths', $exceptionPaths);
 
 // An empty salt would sign every cookie the same way.
 if (!$settings->get('botchallenge_salt')) {
