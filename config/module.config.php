@@ -68,6 +68,7 @@ return [
                 '*/atom',
                 '*/rss',
                 '*/suggest',
+                '/access/authorize',
                 '/access/files',
                 '/api',
                 '/api-local',
