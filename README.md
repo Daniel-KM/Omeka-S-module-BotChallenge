@@ -153,6 +153,7 @@ TODO
 - [ ] Rate limiting for api (see [Mediawiki])
 - [ ] Anti robots BlackHole (see [Wordpress blackhole])
 - [ ] Remove ux challenge
+- [ ] Reverse DNS inverse to avoid CDN issue.
 
 
 Warning
