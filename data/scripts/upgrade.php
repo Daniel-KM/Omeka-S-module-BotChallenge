@@ -73,6 +73,11 @@ $exceptionPaths = array_values(array_unique(array_merge(
 sort($exceptionPaths);
 $settings->set('botchallenge_exception_paths', $exceptionPaths);
 
+// The ranges of the exempted bots are merged on each upgrade too: a fresh
+// install did not merge them, so the search engines were challenged until the
+// config was saved, and the bundled ranges may have been updated.
+$this->updateExceptionIps($settings);
+
 // An empty salt would sign every cookie the same way.
 if (!$settings->get('botchallenge_salt')) {
     $settings->set('botchallenge_salt', bin2hex(random_bytes(32)));

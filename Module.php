@@ -46,6 +46,8 @@ class Module extends AbstractModule
 
         $salt = bin2hex(random_bytes(32));
         $settings->set('botchallenge_salt', $salt);
+
+        $this->updateExceptionIps($settings);
     }
 
     public function uninstall($serviceLocator)
@@ -65,6 +67,24 @@ class Module extends AbstractModule
         $this->setServiceLocator($services);
         $filepath = __DIR__ . '/data/scripts/upgrade.php';
         require_once $filepath;
+    }
+
+    /**
+     * Merge the ip ranges of the exempted bots and the manual ones.
+     *
+     * The ranges of the bots are the bundled files or the base override
+     * refreshed by the job. They are merged once, so the check of each request
+     * reads a single list.
+     */
+    protected function updateExceptionIps(\Omeka\Settings\Settings $settings): void
+    {
+        $bots = $settings->get('botchallenge_exception_bots') ?: [];
+        $override = $settings->get('botchallenge_bot_ips') ?: [];
+        $exceptionIps = $settings->get('botchallenge_exception_ips') ?: [];
+        $settings->set('botchallenge_exception_ips_all', array_values(array_unique(array_merge(
+            Stdlib\BotIps::ipsForBots($bots, $override),
+            $exceptionIps
+        ))));
     }
 
     public function getConfigForm(PhpRenderer $renderer)
@@ -121,14 +141,7 @@ class Module extends AbstractModule
         $settings->set('botchallenge_exception_bots', $bots);
         $settings->set('botchallenge_exception_ips', $exceptionIps);
 
-        // The ranges of the bots (bundled files or the base override refreshed
-        // by the job) and the manual ones are merged once here, so the check of
-        // each request reads a single list.
-        $override = $settings->get('botchallenge_bot_ips') ?: [];
-        $settings->set('botchallenge_exception_ips_all', array_values(array_unique(array_merge(
-            Stdlib\BotIps::ipsForBots($bots, $override),
-            $exceptionIps
-        ))));
+        $this->updateExceptionIps($settings);
 
         if (!empty($formData['botchallenge_refresh_ips'])) {
             $services = $this->getServiceLocator();
