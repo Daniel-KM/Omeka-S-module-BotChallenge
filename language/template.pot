@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-03 00:00+0000\n"
+"POT-Creation-Date: 2026-11-02 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,60 +17,77 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: view/bot-challenge/index/index.phtml:26
+#: view/bot-challenge/index/index.phtml:25
 msgid "Verifying your browser"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:129
+#: view/bot-challenge/index/index.phtml:128
 msgid "JavaScript required"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:130
+#: view/bot-challenge/index/index.phtml:129
 msgid "Please enable JavaScript in your browser to access this site."
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:135
+#: view/bot-challenge/index/index.phtml:134
 msgid "Verifying your browser…"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:137
+#: view/bot-challenge/index/index.phtml:136
 msgid "This is an automatic process. Please wait."
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:141
+#: view/bot-challenge/index/index.phtml:140
 #, php-format
 msgid "Powered by %s"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:175
+#: view/bot-challenge/index/index.phtml:173
 msgid "Automated browser detected. Access denied."
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:195
+#: view/bot-challenge/index/index.phtml:200
 msgid "Verified. Redirecting…"
 msgstr ""
 
-#: Module.php:130
+#: view/bot-challenge/index/index.phtml:205
+msgid "Verification failed. Reload the page to try again."
+msgstr ""
+
+#: data/scripts/upgrade.php:42
 #, php-format
 msgid ""
-"Updating the ip ranges of the search engines in the background (job %s)."
+"The lifetime of the challenge cookie was changed from %1$s to %2$s days, "
+"because the cookie is now renewed automatically as long as the visitor is "
+"active. The previous value (%1$s days) can be set again in the config of the "
+"module."
 msgstr ""
 
-#: src/Job/RefreshBotIps.php:47
+#: data/scripts/upgrade.php:49
 msgid ""
-"BotChallenge: the source of {bot} is unreachable or empty ({url}): the "
-"bundled ranges are kept."
+"The existing challenge cookies are invalid: each visitor will pass the "
+"challenge once again. This is wanted, since a cookie obtained before this "
+"version was usable by any client."
 msgstr ""
 
-#: src/Job/RefreshBotIps.php:54
-msgid "BotChallenge: the ranges of {bot} could not be written in {path}."
+#: Module.php:153
+#, php-format
+msgid ""
+"Updating the ip ranges of the search engines in a background job (%1$sjob "
+"#%2$s%3$s, %4$slogs%3$s)."
 msgstr ""
 
-#: src/Job/RefreshBotIps.php:61
+#: src/Job/RefreshBotIps.php:51
+msgid ""
+"BotChallenge: the source of {bot} is unreachable or truncated ({url}): the "
+"previous ranges are kept."
+msgstr ""
+
+#: src/Job/RefreshBotIps.php:67
 msgid "BotChallenge: {total} ranges updated for {bot}."
 msgstr ""
 
-#: src/Job/RefreshBotIps.php:75
+#: src/Job/RefreshBotIps.php:83
 msgid "BotChallenge: {total} source(s) refreshed."
 msgstr ""
 
@@ -101,29 +118,41 @@ msgid "Number of days the challenge cookie remains valid."
 msgstr ""
 
 #: src/Form/ConfigForm.php:55
-msgid "Detect headless browsers"
+msgid "Bind the cookie to the ip"
 msgstr ""
 
 #: src/Form/ConfigForm.php:56
+msgid ""
+"Add the ip to the signature, so a cookie shared with another machine is "
+"refused. Only for a controlled network: an ip changes without the visitor "
+"moving (ipv6 rotation, dual stack, private relay, vpn) and is shared by many "
+"visitors behind a nat. Toggling it invalidates all cookies."
+msgstr ""
+
+#: src/Form/ConfigForm.php:66
+msgid "Detect headless browsers"
+msgstr ""
+
+#: src/Form/ConfigForm.php:67
 msgid ""
 "Run additional tests to detect headless browsers (Selenium, PhantomJS, "
 "Puppeteer, etc.)."
 msgstr ""
 
-#: src/Form/ConfigForm.php:66
+#: src/Form/ConfigForm.php:77
 msgid "Exception paths"
 msgstr ""
 
-#: src/Form/ConfigForm.php:67
+#: src/Form/ConfigForm.php:78
 msgid ""
 "Url path prefixes to exclude from the challenge, one per line. Example: /api"
 msgstr ""
 
-#: src/Form/ConfigForm.php:78
+#: src/Form/ConfigForm.php:89
 msgid "Exempted search engines"
 msgstr ""
 
-#: src/Form/ConfigForm.php:79
+#: src/Form/ConfigForm.php:90
 msgid ""
 "Search engines whose published ip ranges are excluded from the challenge. "
 "Without exemption, they receive the javascript challenge, do not solve it, "
@@ -131,22 +160,22 @@ msgid ""
 "be updated with the job below."
 msgstr ""
 
-#: src/Form/ConfigForm.php:90
+#: src/Form/ConfigForm.php:101
 msgid "Update the ip ranges now"
 msgstr ""
 
-#: src/Form/ConfigForm.php:91
+#: src/Form/ConfigForm.php:102
 msgid ""
 "Run a job to fetch the ip ranges from the sources of the search engines. A "
 "source that is unreachable or truncated is skipped and the bundled ranges "
 "are kept."
 msgstr ""
 
-#: src/Form/ConfigForm.php:101
+#: src/Form/ConfigForm.php:112
 msgid "Exception IPs"
 msgstr ""
 
-#: src/Form/ConfigForm.php:102
+#: src/Form/ConfigForm.php:113
 msgid ""
 "Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line: the "
 "networks of the institution, a partner harvester, a specific bot. They are "

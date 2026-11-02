@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-03 00:00+0000\n"
-"PO-Revision-Date: 2026-08-03 00:00+0000\n"
+"POT-Creation-Date: 2026-11-02 00:00+0000\n"
+"PO-Revision-Date: 2026-11-02 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -13,57 +13,66 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.6\n"
 
-#: view/bot-challenge/index/index.phtml:26
+#: view/bot-challenge/index/index.phtml:25
 msgid "Verifying your browser"
 msgstr "Vérification du navigateur"
 
-#: view/bot-challenge/index/index.phtml:129
+#: view/bot-challenge/index/index.phtml:128
 msgid "JavaScript required"
 msgstr "JavaScript requis"
 
-#: view/bot-challenge/index/index.phtml:130
+#: view/bot-challenge/index/index.phtml:129
 msgid "Please enable JavaScript in your browser to access this site."
 msgstr "Veuillez activer JavaScript dans votre navigateur pour accéder à ce site."
 
-#: view/bot-challenge/index/index.phtml:135
+#: view/bot-challenge/index/index.phtml:134
 msgid "Verifying your browser…"
 msgstr "Vérification du navigateur…"
 
-#: view/bot-challenge/index/index.phtml:137
+#: view/bot-challenge/index/index.phtml:136
 msgid "This is an automatic process. Please wait."
 msgstr "Il s’agit d’un processus automatique. Veuillez patienter."
 
-#: view/bot-challenge/index/index.phtml:141
+#: view/bot-challenge/index/index.phtml:140
 #, php-format
 msgid "Powered by %s"
 msgstr "Propulsé par %s"
 
-#: view/bot-challenge/index/index.phtml:175
+#: view/bot-challenge/index/index.phtml:173
 msgid "Automated browser detected. Access denied."
 msgstr "Navigateur automatisé détecté. Accès refusé."
 
-#: view/bot-challenge/index/index.phtml:195
+#: view/bot-challenge/index/index.phtml:200
 msgid "Verified. Redirecting…"
 msgstr "Vérifié. Redirection…"
 
-#: Module.php:130
+#: view/bot-challenge/index/index.phtml:205
+msgid "Verification failed. Reload the page to try again."
+msgstr "Échec de la vérification. Rechargez la page pour réessayer."
+
+#: data/scripts/upgrade.php:42
 #, php-format
-msgid "Updating the ip ranges of the search engines in the background (job %s)."
-msgstr "Mise à jour en arrière-plan des plages d’adresses ip des moteurs de recherche (tâche %s)."
+msgid "The lifetime of the challenge cookie was changed from %1$s to %2$s days, because the cookie is now renewed automatically as long as the visitor is active. The previous value (%1$s days) can be set again in the config of the module."
+msgstr "La durée de vie du cookie de défi a été modifiée, passant de %1$s à %2$s jours, car ce cookie est désormais renouvelé automatiquement tant que le visiteur reste actif. La valeur précédente (%1$s jours) peut être réactivée dans la configuration du module."
 
-#: src/Job/RefreshBotIps.php:47
-msgid "BotChallenge: the source of {bot} is unreachable or empty ({url}): the bundled ranges are kept."
-msgstr "BotChallenge : la source du {bot} est inaccessible ou vide ({url}) : les plages groupées sont conservées."
+#: data/scripts/upgrade.php:49
+msgid "The existing challenge cookies are invalid: each visitor will pass the challenge once again. This is wanted, since a cookie obtained before this version was usable by any client."
+msgstr "Les cookies de vérification existants ne sont plus valides : chaque visiteur devra repasser la vérification. C'est voulu car un cookie obtenu auparavan pouvait être utilisé par n'importe quel client."
 
-#: src/Job/RefreshBotIps.php:54
-msgid "BotChallenge: the ranges of {bot} could not be written in {path}."
-msgstr "BotChallenge : les plages de {bot} n’ont pas pu être écrites dans {path}."
+#: Module.php:153
+#, php-format
+msgid "Updating the ip ranges of the search engines in a background job (%1$sjob #%2$s%3$s, %4$slogs%3$s)."
+msgstr "Mise à jour en arrière-plan des plages ip des moteurs de recherche (%1$stâche #%2$s%3$s, %4$sjournaux%3$s)."
 
-#: src/Job/RefreshBotIps.php:61
+#: src/Job/RefreshBotIps.php:51
+msgid "BotChallenge: the source of {bot} is unreachable or truncated ({url}): the previous ranges are kept."
+msgstr "BotChallenge : la source du {bot} est inaccessible ou incomplète ({url}) : les plages précédentes sont conservées."
+
+#: src/Job/RefreshBotIps.php:67
 msgid "BotChallenge: {total} ranges updated for {bot}."
 msgstr "BotChallenge : mises à jour de {total} plages pour {bot}."
 
-#: src/Job/RefreshBotIps.php:75
+#: src/Job/RefreshBotIps.php:83
 msgid "BotChallenge: {total} source(s) refreshed."
 msgstr "BotChallenge : {total} source(s) actualisée(s)."
 
@@ -92,42 +101,50 @@ msgid "Number of days the challenge cookie remains valid."
 msgstr "Nombre de jours pendant lesquels le cookie reste valide."
 
 #: src/Form/ConfigForm.php:55
+msgid "Bind the cookie to the ip"
+msgstr "Lier le cookie à l'ip"
+
+#: src/Form/ConfigForm.php:56
+msgid "Add the ip to the signature, so a cookie shared with another machine is refused. Only for a controlled network: an ip changes without the visitor moving (ipv6 rotation, dual stack, private relay, vpn) and is shared by many visitors behind a nat. Toggling it invalidates all cookies."
+msgstr "Ajoute l'ip à la signature afin qu'un cookie partagé avec un autre ordinateur soit refusé. À utiliser uniquement sur un réseau contrôlé : une adresse ip peut changer sans que le visiteur ne se déplace (rotation ipv6, double pile, relais privé, vpn) et être partagée par de nombreux visiteurs derrière un nat. L'activation de cette option invalide tous les cookies."
+
+#: src/Form/ConfigForm.php:66
 msgid "Detect headless browsers"
 msgstr "Détecter les navigateurs sans tête"
 
-#: src/Form/ConfigForm.php:56
+#: src/Form/ConfigForm.php:67
 msgid "Run additional tests to detect headless browsers (Selenium, PhantomJS, Puppeteer, etc.)."
 msgstr "Exécuter des tests supplémentaires pour détecter les navigateurs sans tête (Selenium, PhantomJS, Puppeteer, etc.)."
 
-#: src/Form/ConfigForm.php:66
+#: src/Form/ConfigForm.php:77
 msgid "Exception paths"
 msgstr "Exceptions pour les chemins"
 
-#: src/Form/ConfigForm.php:67
+#: src/Form/ConfigForm.php:78
 msgid "Url path prefixes to exclude from the challenge, one per line. Example: /api"
 msgstr "Préfixes de chemins d’url à exclure du défi, un par ligne. Exemple : /api"
 
-#: src/Form/ConfigForm.php:78
+#: src/Form/ConfigForm.php:89
 msgid "Exempted search engines"
 msgstr "Moteurs de recherche exemptés"
 
-#: src/Form/ConfigForm.php:79
+#: src/Form/ConfigForm.php:90
 msgid "Search engines whose published ip ranges are excluded from the challenge. Without exemption, they receive the javascript challenge, do not solve it, and stop indexing the site. The ranges are bundled with the module and may be updated with the job below."
 msgstr "Les moteurs de recherche dont les plages d’adresses ip publiées sont exclues du défi. À moins d'une dérogation, ils reçoivent le défi JavaScript, ne le résolvent pas et cessent d’indexer le site. Ces plages sont intégrées au module et peuvent être mises à jour à l’aide de la tâche ci-dessous."
 
-#: src/Form/ConfigForm.php:90
+#: src/Form/ConfigForm.php:101
 msgid "Update the ip ranges now"
 msgstr "Mettre à jour les plages d'adresses ip maintenant"
 
-#: src/Form/ConfigForm.php:91
+#: src/Form/ConfigForm.php:102
 msgid "Run a job to fetch the ip ranges from the sources of the search engines. A source that is unreachable or truncated is skipped and the bundled ranges are kept."
 msgstr "Lancez une tâche pour récupérer les plages d’adresses ip à partir des sources des moteurs de recherche. Les sources inaccessibles ou incomplètes sont ignorées et les plages regroupées sont conservées."
 
-#: src/Form/ConfigForm.php:101
+#: src/Form/ConfigForm.php:112
 msgid "Exception IPs"
 msgstr "Exceptions pour les ips"
 
-#: src/Form/ConfigForm.php:102
+#: src/Form/ConfigForm.php:113
 msgid "Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line: the networks of the institution, a partner harvester, a specific bot. They are added to the ranges of the search engines above."
 msgstr "Plages ip v4, v6 ou cidr à exclure du défi, une par ligne : les réseaux de l’établissement, d’un collecteur partenaire, d’un bot spécifique. Elles s’ajoutent aux plages des moteurs de recherche mentionnés ci-dessus."
 
@@ -162,6 +179,9 @@ msgstr "Marginalia"
 #: src/Stdlib/BotIps.php:69
 msgid "Yandex"
 msgstr "Yandex"
+
+#~ msgid "BotChallenge: the ranges of {bot} could not be written in {path}."
+#~ msgstr "BotChallenge : les plages de {bot} n’ont pas pu être écrites dans {path}."
 
 #~ msgid "Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line."
 #~ msgstr "Plages ips v4 ou v6 ou cidr à exclure du défi, une par ligne."
