@@ -66,7 +66,7 @@ class Module extends AbstractModule
     {
         $this->setServiceLocator($services);
         $filepath = __DIR__ . '/data/scripts/upgrade.php';
-        require_once $filepath;
+        require $filepath;
     }
 
     /**
