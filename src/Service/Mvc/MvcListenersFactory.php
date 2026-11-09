@@ -12,7 +12,8 @@ class MvcListenersFactory implements FactoryInterface
     {
         return new MvcListeners(
             $services->get('Omeka\Settings'),
-            $services->get('Omeka\ClientIp')
+            // Missing while the module Common is not upgraded.
+            $services->has('Omeka\ClientIp') ? $services->get('Omeka\ClientIp') : null
         );
     }
 }

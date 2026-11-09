@@ -29,7 +29,7 @@ class IndexController extends AbstractActionController
     protected $settings;
 
     /**
-     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp
+     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp|null
      */
     protected $clientIp;
 
@@ -147,10 +147,7 @@ class IndexController extends AbstractActionController
         $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 7) * 86400;
         $userAgent = $this->userAgent();
         $ip = $this->settings->get('botchallenge_bind_ip', false)
-            ? $this->clientIp->getIp(
-                $this->getRequest()->getServer()->toArray(),
-                $this->clientIp::normalizeTrustedProxies($this->settings->get('botchallenge_trusted_proxies', [])) ?: null
-            )
+            ? $this->clientIp()
             : '';
         // Seconds only: microtime() holds a space, that is encoded as "+" in
         // the cookie and not decoded back, so the signature never matched.
@@ -222,5 +219,18 @@ class IndexController extends AbstractActionController
             return true;
         }
         return ($server['SERVER_PORT'] ?? null) === '443';
+    }
+
+    protected function clientIp(): string
+    {
+        $server = $this->getRequest()->getServer()->toArray();
+        // The service is missing while the module Common is not upgraded.
+        if (!$this->clientIp) {
+            return (string) ($server['REMOTE_ADDR'] ?? '::');
+        }
+        return $this->clientIp->getIp(
+            $server,
+            $this->clientIp::normalizeTrustedProxies($this->settings->get('botchallenge_trusted_proxies', [])) ?: null
+        );
     }
 }

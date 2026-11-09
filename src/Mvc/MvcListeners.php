@@ -15,7 +15,7 @@ class MvcListeners extends AbstractListenerAggregate
     protected $settings;
 
     /**
-     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp
+     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp|null
      */
     protected $clientIp;
 
@@ -100,7 +100,7 @@ class MvcListeners extends AbstractListenerAggregate
         $exceptionIps = $this->settings->get('botchallenge_exception_ips_all')
             ?: $this->settings->get('botchallenge_exception_ips', []);
         foreach ($exceptionIps as $exceptionIp) {
-            if ($exceptionIp !== '' && $this->clientIp::ipInCidr($clientIp, $exceptionIp)) {
+            if ($exceptionIp !== '' && $this->ipInCidr($clientIp, $exceptionIp)) {
                 return;
             }
         }
@@ -239,10 +239,22 @@ class MvcListeners extends AbstractListenerAggregate
      */
     protected function getClientIp(MvcEvent $event): string
     {
+        $server = $event->getRequest()->getServer()->toArray();
+        // The service is missing while the module Common is not upgraded.
+        if (!$this->clientIp) {
+            return (string) ($server['REMOTE_ADDR'] ?? '::');
+        }
         return $this->clientIp->getIp(
-            $event->getRequest()->getServer()->toArray(),
+            $server,
             $this->clientIp::normalizeTrustedProxies($this->settings->get('botchallenge_trusted_proxies', [])) ?: null
         );
+    }
+
+    protected function ipInCidr(string $ip, string $cidr): bool
+    {
+        return $this->clientIp
+            ? $this->clientIp::ipInCidr($ip, $cidr)
+            : $ip === $cidr;
     }
 
 }
