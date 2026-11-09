@@ -24,6 +24,9 @@ Installation
 
 See general end user documentation for [installing a module].
 
+This module requires the module [Common], version 3.4.96 or later, that should
+be installed first.
+
 * Composer (recommended, requires Omeka [pull request #2432])
 
 Install the module from the root of Omeka S:
@@ -75,6 +78,11 @@ The configuration can be adjusted in the module config form.
   controlled network: see the limits below. Toggling it invalidates all
   cookies.
 - Detect headless browsers: Run additional tests for headless environments
+- Action of the visitor: None (automatic redirection), a checkbox to check or a
+  button to click once the delay is over, to stop the bots that run the
+  javascript without interacting with the page. A click triggered by a script
+  is ignored. It is a simple obstacle, not a proof: the server cannot check that
+  the click was real.
 - Exception paths: /api, /api-local
 - Exempted search engines: check the engines whose published ip ranges are
   excluded from the challenge
@@ -82,13 +90,23 @@ The configuration can be adjusted in the module config form.
 - Exception ips: list of IPv4/IPv6/cidr ranges, added to the ranges of the
   engines above: the networks of the institution, a partner harvester, etc.
 
+The ip of the visitor is read in the headers X-Forwarded-For (the first ip from
+the right that is not a trusted proxy) and X-Real-IP only when the request comes
+from a trusted reverse proxy, else anybody could write an excepted ip in them.
+The trusted proxies are set in the main settings (section Security). When the
+list is empty, the proxies with a private or loopback address are trusted, so
+the module works without config with or without a proxy in the same host or
+network (Traefik, nginx, Docker). Set the list when the proxy has a public
+address (load balancer, cdn) or when the local network is not trusted.
+
 ### How the challenge works
 
 1. A visitor without a valid cookie is redirected to the challenge page, that
    holds a single use nonce, tied to the session. The page delivers no cookie:
    a plain request returns nothing usable.
 2. The javascript checks the browser (headless detection), waits for the delay,
-   then posts the nonce back.
+   asks for the action of the visitor if the option is set, then posts the nonce
+   back.
 3. The server checks the nonce, consumes it, and sets the cookie itself. So the
    cookie is `HttpOnly`: the client never needs to read it.
 
@@ -227,6 +245,7 @@ The idea of this modules comes from a [thread in omeka forum].
 [BotChallenge.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-BotChallenge/-/releases
 [thread in omeka forum]: https://forum.omeka.org/t/inquiry-about-bot-traffic-control-in-omeka-classic/28800
 [installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
+[Common]: https://gitlab.com/Daniel-KM/Omeka-S-module-Common
 [module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-BotChallenge/-/work_items
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
