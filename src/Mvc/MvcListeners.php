@@ -15,7 +15,7 @@ class MvcListeners extends AbstractListenerAggregate
     protected $settings;
 
     /**
-     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp|null
+     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp
      */
     protected $clientIp;
 
@@ -237,19 +237,12 @@ class MvcListeners extends AbstractListenerAggregate
      */
     protected function getClientIp(MvcEvent $event): string
     {
-        $server = $event->getRequest()->getServer()->toArray();
-        // The service is missing while the module Common is not upgraded.
-        if (!$this->clientIp) {
-            return (string) ($server['REMOTE_ADDR'] ?? '::');
-        }
-        return $this->clientIp->getIp($server);
+        return $this->clientIp->getIp($event->getRequest()->getServer()->toArray());
     }
 
     protected function ipInCidr(string $ip, string $cidr): bool
     {
-        return $this->clientIp
-            ? $this->clientIp::ipInCidr($ip, $cidr)
-            : $ip === $cidr;
+        return $this->clientIp::ipInCidr($ip, $cidr);
     }
 
 }

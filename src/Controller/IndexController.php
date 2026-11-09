@@ -29,7 +29,7 @@ class IndexController extends AbstractActionController
     protected $settings;
 
     /**
-     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp|null
+     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp
      */
     protected $clientIp;
 
@@ -223,11 +223,6 @@ class IndexController extends AbstractActionController
 
     protected function clientIp(): string
     {
-        $server = $this->getRequest()->getServer()->toArray();
-        // The service is missing while the module Common is not upgraded.
-        if (!$this->clientIp) {
-            return (string) ($server['REMOTE_ADDR'] ?? '::');
-        }
-        return $this->clientIp->getIp($server);
+        return $this->clientIp->getIp($this->getRequest()->getServer()->toArray());
     }
 }
