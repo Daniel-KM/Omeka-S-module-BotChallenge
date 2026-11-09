@@ -81,6 +81,7 @@ class IndexController extends AbstractActionController
 
         $delay = (int) $this->settings->get('botchallenge_delay', 5);
         $testHeadless = (bool) $this->settings->get('botchallenge_test_headless', true);
+        $interaction = (string) $this->settings->get('botchallenge_interaction', 'none');
 
         // Prevent caching.
         $response = $this->getResponse();
@@ -94,6 +95,7 @@ class IndexController extends AbstractActionController
             'redirectUrl' => $redirectUrl,
             'isHttps' => $isHttps,
             'testHeadless' => $testHeadless,
+            'interaction' => in_array($interaction, ['checkbox', 'button'], true) ? $interaction : '',
         ]);
         return $view
             ->setTerminal(true);

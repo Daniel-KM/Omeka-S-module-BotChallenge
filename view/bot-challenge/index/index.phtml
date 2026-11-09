@@ -6,6 +6,7 @@
  * @var string $redirectUrl
  * @var bool $isHttps
  * @var bool $testHeadless
+ * @var string $interaction "checkbox", "button", or empty for no action.
  */
 
 $plugins = $this->getHelperPluginManager();
@@ -76,6 +77,29 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
             margin: 12px 0;
         }
 
+        .interaction {
+            margin: 12px 0;
+        }
+        .interaction label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #404E61;
+            cursor: pointer;
+        }
+        .interaction input {
+            width: 20px;
+            height: 20px;
+        }
+        .interaction button {
+            background: #404E61;
+            border: 0;
+            color: #fff;
+            cursor: pointer;
+            font: inherit;
+            padding: 8px 24px;
+        }
+
         .status {
             color: #676767;
             font-size: 14px;
@@ -133,7 +157,12 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
             <div class="spinner" id="spinner"></div>
             <h1><?= $escape($translate('Verifying your browser…')) ?></h1>
             <div class="countdown" id="countdown"></div>
-            <p class="status" id="status"><?= $escape($translate('This is an automatic process. Please wait.')) ?></p>
+            <?php if ($interaction === 'checkbox'): ?>
+            <p class="interaction" id="interaction" hidden><label><input type="checkbox" id="interaction-control"> <?= $escape($translate('I am not a robot')) ?></label></p>
+            <?php elseif ($interaction === 'button'): ?>
+            <p class="interaction" id="interaction" hidden><button type="button" id="interaction-control"><?= $escape($translate('Access the site')) ?></button></p>
+            <?php endif ?>
+            <p class="status" id="status"><?= $escape($interaction ? $translate('Please wait a few seconds.') : $translate('This is an automatic process. Please wait.')) ?></p>
         </div>
     </div>
     <footer>
@@ -146,6 +175,7 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
         var redirectUrl = <?= json_encode($redirectUrl) ?>;
         var isHttps = <?= $isHttps ? 'true' : 'false' ?>;
         var testHeadless = <?= $testHeadless ? 'true' : 'false' ?>;
+        var interaction = <?= json_encode($interaction) ?>;
 
         var box = document.getElementById('challenge');
         var countdownEl = document.getElementById('countdown');
@@ -174,6 +204,47 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
             }
         }
 
+        var verify = function() {
+            // The cookie is delivered by the server, once it checked the
+            // nonce: the client cannot forge it by itself.
+            var body = new FormData();
+            body.append('nonce', nonce);
+            fetch(window.location.pathname, {
+                method: 'POST',
+                body: body,
+                credentials: 'same-origin',
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+                .then(function (response) {
+                    if (!response.ok) throw new Error('denied');
+                    statusEl.textContent = <?= json_encode($translate('Verified. Redirecting…')) ?>;
+                    window.location.href = redirectUrl;
+                })
+                .catch(function () {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = <?= json_encode($translate('Verification failed. Reload the page to try again.')) ?>;
+                });
+        };
+
+        var askInteraction = function() {
+            var control = document.getElementById('interaction-control');
+            document.getElementById('interaction').hidden = false;
+            statusEl.textContent = interaction === 'checkbox'
+                ? <?= json_encode($translate('Check the box to access the site.')) ?>
+                : <?= json_encode($translate('Click the button to access the site.')) ?>;
+            control.focus();
+            control.addEventListener('click', function handler(event) {
+                // A click triggered by a script is not trusted.
+                if (!event.isTrusted) {
+                    event.preventDefault();
+                    return;
+                }
+                control.removeEventListener('click', handler);
+                control.disabled = true;
+                verify();
+            });
+        };
+
         var remaining = delay;
         countdownEl.textContent = remaining;
         var interval = setInterval(function() {
@@ -184,25 +255,11 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
                 clearInterval(interval);
                 countdownEl.textContent = '';
                 spinnerEl.style.display = 'none';
-                // The cookie is delivered by the server, once it checked the
-                // nonce: the client cannot forge it by itself.
-                var body = new FormData();
-                body.append('nonce', nonce);
-                fetch(window.location.pathname, {
-                    method: 'POST',
-                    body: body,
-                    credentials: 'same-origin',
-                    headers: {'X-Requested-With': 'XMLHttpRequest'}
-                })
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('denied');
-                        statusEl.textContent = <?= json_encode($translate('Verified. Redirecting…')) ?>;
-                        window.location.href = redirectUrl;
-                    })
-                    .catch(function () {
-                        statusEl.className = 'status error';
-                        statusEl.textContent = <?= json_encode($translate('Verification failed. Reload the page to try again.')) ?>;
-                    });
+                if (interaction) {
+                    askInteraction();
+                } else {
+                    verify();
+                }
             }
         }, 1000);
     })();

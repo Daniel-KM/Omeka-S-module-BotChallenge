@@ -71,6 +71,23 @@ class ConfigForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'botchallenge_interaction',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Action of the visitor', // @translate
+                    'info' => 'Require a real action of the visitor once the delay is over. The bots that run the javascript but do not interact with the page are stopped.', // @translate
+                    'value_options' => [
+                        'none' => 'None (automatic redirection)', // @translate
+                        'checkbox' => 'Checkbox to check', // @translate
+                        'button' => 'Button to click', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'botchallenge_interaction',
+                    'value' => 'none',
+                ],
+            ])
+            ->add([
                 'name' => 'botchallenge_exception_paths',
                 'type' => OmekaElement\ArrayTextarea::class,
                 'options' => [
@@ -122,6 +139,10 @@ class ConfigForm extends Form
             $inputFilter
                 ->add([
                     'name' => 'botchallenge_salt',
+                    'required' => false,
+                ])
+                ->add([
+                    'name' => 'botchallenge_interaction',
                     'required' => false,
                 ])
                 ->add([
