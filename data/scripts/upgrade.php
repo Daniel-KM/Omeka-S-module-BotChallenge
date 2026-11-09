@@ -13,6 +13,16 @@ namespace BotChallenge;
  */
 $settings = $services->get('Omeka\Settings');
 $messenger = $services->get('ControllerPluginManager')->get('messenger');
+$translator = $services->get('MvcTranslator');
+
+if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.96')) {
+    $message = new \Omeka\Stdlib\Message(
+        $translator->translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+        'Common', '3.4.96'
+    );
+    $messenger->addError($message);
+    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translator->translate('Missing requirement. Unable to upgrade.')); // @translate
+}
 
 $configLocal = require dirname(__DIR__, 2) . '/config/module.config.php';
 

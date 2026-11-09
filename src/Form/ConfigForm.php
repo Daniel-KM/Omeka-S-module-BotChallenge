@@ -140,6 +140,31 @@ class ConfigForm extends Form
                 ->add([
                     'name' => 'botchallenge_salt',
                     'required' => false,
+                    'filters' => [
+                        ['name' => \Laminas\Filter\StringTrim::class],
+                    ],
+                ])
+                ->add([
+                    'name' => 'botchallenge_delay',
+                    'filters' => [
+                        ['name' => \Laminas\Filter\ToInt::class],
+                    ],
+                    'validators' => [
+                        ['name' => \Laminas\Validator\Between::class, 'options' => ['min' => 1, 'max' => 30]],
+                    ],
+                ])
+                ->add([
+                    'name' => 'botchallenge_cookie_lifetime',
+                    'filters' => [
+                        ['name' => \Laminas\Filter\ToInt::class],
+                    ],
+                    'validators' => [
+                        ['name' => \Laminas\Validator\Between::class, 'options' => ['min' => 1, 'max' => 365]],
+                    ],
+                ])
+                ->add([
+                    'name' => 'botchallenge_refresh_ips',
+                    'required' => false,
                 ])
                 ->add([
                     'name' => 'botchallenge_interaction',
@@ -148,6 +173,14 @@ class ConfigForm extends Form
                 ->add([
                     'name' => 'botchallenge_exception_bots',
                     'required' => false,
+                    'filters' => [
+                        [
+                            'name' => \Laminas\Filter\Callback::class,
+                            'options' => [
+                                'callback' => fn ($bots): array => array_values(array_intersect((array) $bots, array_keys(\BotChallenge\Stdlib\BotIps::BOTS))),
+                            ],
+                        ],
+                    ],
                 ]);
     }
 }
