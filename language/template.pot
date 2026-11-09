@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 00:00+0000\n"
+"POT-Creation-Date: 2026-11-09 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -42,15 +42,15 @@ msgstr ""
 msgid "Powered by %s"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:173
+#: view/bot-challenge/index/index.phtml:172
 msgid "Automated browser detected. Access denied."
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:200
+#: view/bot-challenge/index/index.phtml:199
 msgid "Verified. Redirecting…"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:205
+#: view/bot-challenge/index/index.phtml:204
 msgid "Verification failed. Reload the page to try again."
 msgstr ""
 
