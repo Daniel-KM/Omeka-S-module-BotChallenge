@@ -17,44 +17,73 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: view/bot-challenge/index/index.phtml:25
+#: data/scripts/upgrade.php:20 Module.php:64
+#, php-format
+msgid "The module %1$s should be upgraded to version %2$s or later."
+msgstr ""
+
+#: data/scripts/upgrade.php:24
+msgid "Missing requirement. Unable to upgrade."
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:26
 msgid "Verifying your browser"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:128
+#: view/bot-challenge/index/index.phtml:152
 msgid "JavaScript required"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:129
+#: view/bot-challenge/index/index.phtml:153
 msgid "Please enable JavaScript in your browser to access this site."
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:134
+#: view/bot-challenge/index/index.phtml:158
 msgid "Verifying your browser…"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:136
+#: view/bot-challenge/index/index.phtml:161
+msgid "I am not a robot"
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:163
+msgid "Access the site"
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:165
+msgid "Please wait a few seconds."
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:165
 msgid "This is an automatic process. Please wait."
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:140
+#: view/bot-challenge/index/index.phtml:169
 #, php-format
 msgid "Powered by %s"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:172
+#: view/bot-challenge/index/index.phtml:202
 msgid "Automated browser detected. Access denied."
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:199
+#: view/bot-challenge/index/index.phtml:220
 msgid "Verified. Redirecting…"
 msgstr ""
 
-#: view/bot-challenge/index/index.phtml:204
+#: view/bot-challenge/index/index.phtml:225
 msgid "Verification failed. Reload the page to try again."
 msgstr ""
 
-#: data/scripts/upgrade.php:42
+#: view/bot-challenge/index/index.phtml:233
+msgid "Check the box to access the site."
+msgstr ""
+
+#: view/bot-challenge/index/index.phtml:234
+msgid "Click the button to access the site."
+msgstr ""
+
+#: data/scripts/upgrade.php:52
 #, php-format
 msgid ""
 "The lifetime of the challenge cookie was changed from %1$s to %2$s days, "
@@ -63,14 +92,22 @@ msgid ""
 "module."
 msgstr ""
 
-#: data/scripts/upgrade.php:49
+#: data/scripts/upgrade.php:59
 msgid ""
 "The existing challenge cookies are invalid: each visitor will pass the "
 "challenge once again. This is wanted, since a cookie obtained before this "
 "version was usable by any client."
 msgstr ""
 
-#: Module.php:153
+#: data/scripts/upgrade.php:108
+#, php-format
+msgid ""
+"The trusted reverse proxies are now managed in the security section of the "
+"main settings and apply to all modules, including the ones that grant rights "
+"or lock out by ip. Check that each one is a reverse proxy of the server: %s."
+msgstr ""
+
+#: Module.php:121
 #, php-format
 msgid ""
 "Updating the ip ranges of the search engines in a background job (%1$sjob "
@@ -140,19 +177,41 @@ msgid ""
 msgstr ""
 
 #: src/Form/ConfigForm.php:77
-msgid "Exception paths"
+msgid "Action of the visitor"
 msgstr ""
 
 #: src/Form/ConfigForm.php:78
 msgid ""
+"Require a real action of the visitor once the delay is over. The bots that "
+"run the javascript but do not interact with the page are stopped."
+msgstr ""
+
+#: src/Form/ConfigForm.php:80
+msgid "None (automatic redirection)"
+msgstr ""
+
+#: src/Form/ConfigForm.php:81
+msgid "Checkbox to check"
+msgstr ""
+
+#: src/Form/ConfigForm.php:82
+msgid "Button to click"
+msgstr ""
+
+#: src/Form/ConfigForm.php:94
+msgid "Exception paths"
+msgstr ""
+
+#: src/Form/ConfigForm.php:95
+msgid ""
 "Url path prefixes to exclude from the challenge, one per line. Example: /api"
 msgstr ""
 
-#: src/Form/ConfigForm.php:89
+#: src/Form/ConfigForm.php:106
 msgid "Exempted search engines"
 msgstr ""
 
-#: src/Form/ConfigForm.php:90
+#: src/Form/ConfigForm.php:107
 msgid ""
 "Search engines whose published ip ranges are excluded from the challenge. "
 "Without exemption, they receive the javascript challenge, do not solve it, "
@@ -160,22 +219,22 @@ msgid ""
 "be updated with the job below."
 msgstr ""
 
-#: src/Form/ConfigForm.php:101
+#: src/Form/ConfigForm.php:118
 msgid "Update the ip ranges now"
 msgstr ""
 
-#: src/Form/ConfigForm.php:102
+#: src/Form/ConfigForm.php:119
 msgid ""
 "Run a job to fetch the ip ranges from the sources of the search engines. A "
 "source that is unreachable or truncated is skipped and the bundled ranges "
 "are kept."
 msgstr ""
 
-#: src/Form/ConfigForm.php:112
+#: src/Form/ConfigForm.php:129
 msgid "Exception IPs"
 msgstr ""
 
-#: src/Form/ConfigForm.php:113
+#: src/Form/ConfigForm.php:130
 msgid ""
 "Ips v4 or v6 or cidr ranges to exclude from the challenge, one per line: the "
 "networks of the institution, a partner harvester, a specific bot. They are "
