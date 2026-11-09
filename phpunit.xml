@@ -10,7 +10,6 @@
     <testsuites>
         <!-- Unit tests that don't need Application (fast) -->
         <testsuite name="unit">
-            <file>tests/BotChallengeTest/Mvc/IpInCidrTest.php</file>
             <file>tests/BotChallengeTest/Mvc/PathIsExceptedTest.php</file>
             <file>tests/BotChallengeTest/Mvc/GetClientIpTest.php</file>
             <file>tests/BotChallengeTest/Mvc/TokenTest.php</file>
@@ -19,6 +18,8 @@
         <!-- Controller tests (HTTP dispatch) -->
         <testsuite name="controller">
             <directory suffix="Test.php">tests/BotChallengeTest/Controller</directory>
+            <file>tests/BotChallengeTest/ConfigFormTest.php</file>
+            <file>tests/BotChallengeTest/UpgradeTest.php</file>
         </testsuite>
     </testsuites>
     <php>

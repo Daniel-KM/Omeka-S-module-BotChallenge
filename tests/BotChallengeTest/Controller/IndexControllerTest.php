@@ -39,6 +39,38 @@ class IndexControllerTest extends AbstractHttpControllerTestCase
         $this->assertStringNotContainsString('document.cookie', $body);
     }
 
+    /**
+     * @dataProvider interactionProvider
+     */
+    public function testInteraction(?string $setting, string $expected, array $present, array $absent): void
+    {
+        $settings = $this->getApplication()->getServiceManager()->get('Omeka\Settings');
+        $settings->set('botchallenge_interaction', $setting);
+        try {
+            $this->dispatch('/bot-challenge');
+            $body = $this->getResponse()->getBody();
+            $this->assertStringContainsString('var interaction = ' . $expected . ';', $body);
+            foreach ($present as $text) {
+                $this->assertStringContainsString($text, $body);
+            }
+            foreach ($absent as $text) {
+                $this->assertStringNotContainsString($text, $body);
+            }
+        } finally {
+            $this->getApplication()->getServiceManager()->get('Omeka\Settings')->delete('botchallenge_interaction');
+        }
+    }
+
+    public function interactionProvider(): array
+    {
+        return [
+            'none' => ['none', '""', [], ['id="interaction-control"']],
+            'unknown value' => ['other', '""', [], ['id="interaction-control"']],
+            'checkbox' => ['checkbox', '"checkbox"', ['type="checkbox" id="interaction-control"', 'event.isTrusted'], ['<button type="button" id="interaction-control"']],
+            'button' => ['button', '"button"', ['<button type="button" id="interaction-control"', 'event.isTrusted'], ['type="checkbox" id="interaction-control"']],
+        ];
+    }
+
     public function testDefaultRedirectUrl(): void
     {
         $this->dispatch('/bot-challenge');

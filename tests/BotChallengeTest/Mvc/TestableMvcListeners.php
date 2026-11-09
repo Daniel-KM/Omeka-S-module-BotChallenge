@@ -15,14 +15,10 @@ use Omeka\Settings\Settings;
  */
 class TestableMvcListeners extends MvcListeners
 {
-    public function __construct(Settings $settings)
+    public function __construct(Settings $settings, array $mainTrustedProxies = [])
     {
-        parent::__construct($settings);
-    }
-
-    public function publicIpInCidr(string $ip, string $cidr): bool
-    {
-        return $this->ipInCidr($ip, $cidr);
+        $clientIpClass = class_exists(\Omeka\Stdlib\ClientIp::class) ? \Omeka\Stdlib\ClientIp::class : \Common\Stdlib\ClientIp::class;
+        parent::__construct($settings, new $clientIpClass($mainTrustedProxies));
     }
 
     public function publicGetClientIp(MvcEvent $event): string

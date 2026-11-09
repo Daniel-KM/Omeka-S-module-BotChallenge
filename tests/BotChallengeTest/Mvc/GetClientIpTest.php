@@ -2,47 +2,29 @@
 
 namespace BotChallengeTest\Mvc;
 
-use Laminas\Http\Header\GenericHeader;
-use Laminas\Http\Headers;
 use Laminas\Http\PhpEnvironment\Request;
 use Laminas\Mvc\MvcEvent;
+use Laminas\Stdlib\Parameters;
 use Omeka\Settings\Settings;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * The ip is resolved by the service Omeka\ClientIp with the trusted proxies of
+ * the main settings.
+ *
  * @covers \BotChallenge\Mvc\MvcListeners::getClientIp
  */
 class GetClientIpTest extends TestCase
 {
-    /**
-     * @var TestableMvcListeners
-     */
-    protected $listener;
-
-    public function setUp(): void
+    protected function listener(array $trustedProxies = []): TestableMvcListeners
     {
-        $settings = $this->createMock(Settings::class);
-        $this->listener = new TestableMvcListeners($settings);
+        return new TestableMvcListeners($this->createMock(Settings::class), $trustedProxies);
     }
 
-    protected function createMvcEventWithHeaders(array $headerMap, ?string $remoteAddr = null): MvcEvent
+    protected function event(array $server): MvcEvent
     {
-        $headers = new Headers();
-        foreach ($headerMap as $name => $value) {
-            $headers->addHeader(GenericHeader::fromString("$name: $value"));
-        }
-
-        $request = $this->createMock(Request::class);
-        $request->method('getHeaders')->willReturn($headers);
-        $request->method('getServer')->willReturnCallback(
-            function (string $key, $default = null) use ($remoteAddr) {
-                if ($key === 'REMOTE_ADDR') {
-                    return $remoteAddr ?? $default;
-                }
-                return $default;
-            }
-        );
-
+        $request = new Request();
+        $request->setServer(new Parameters($server));
         $event = new MvcEvent();
         $event->setRequest($request);
         return $event;
@@ -50,52 +32,42 @@ class GetClientIpTest extends TestCase
 
     public function testRemoteAddrOnly(): void
     {
-        $event = $this->createMvcEventWithHeaders([], '203.0.113.50');
-        $this->assertSame('203.0.113.50', $this->listener->publicGetClientIp($event));
+        $event = $this->event(['REMOTE_ADDR' => '203.0.113.50']);
+        $this->assertSame('203.0.113.50', $this->listener()->publicGetClientIp($event));
     }
 
-    public function testXForwardedForSingle(): void
+    public function testHeadersFromPublicPeerAreIgnored(): void
     {
-        $event = $this->createMvcEventWithHeaders(
-            ['X-Forwarded-For' => '198.51.100.10'],
-            '10.0.0.1'
-        );
-        $this->assertSame('198.51.100.10', $this->listener->publicGetClientIp($event));
+        // Without proxy, a visitor may write an excepted ip in the headers.
+        $event = $this->event([
+            'REMOTE_ADDR' => '203.0.113.50',
+            'HTTP_X_FORWARDED_FOR' => '198.51.100.10',
+            'HTTP_X_REAL_IP' => '198.51.100.20',
+        ]);
+        $this->assertSame('203.0.113.50', $this->listener()->publicGetClientIp($event));
     }
 
-    public function testXForwardedForMultiple(): void
+    public function testLocalProxyAndForgedLeftPart(): void
     {
-        $event = $this->createMvcEventWithHeaders(
-            ['X-Forwarded-For' => '198.51.100.10, 10.0.0.1, 172.16.0.1'],
-            '10.0.0.1'
-        );
-        $this->assertSame('198.51.100.10', $this->listener->publicGetClientIp($event));
+        $event = $this->event([
+            'REMOTE_ADDR' => '172.18.0.2',
+            'HTTP_X_FORWARDED_FOR' => '198.51.100.10, 203.0.113.50',
+        ]);
+        $this->assertSame('203.0.113.50', $this->listener()->publicGetClientIp($event));
     }
 
-    public function testXRealIp(): void
+    public function testTrustedProxies(): void
     {
-        $event = $this->createMvcEventWithHeaders(
-            ['X-Real-IP' => '198.51.100.20'],
-            '10.0.0.1'
-        );
-        $this->assertSame('198.51.100.20', $this->listener->publicGetClientIp($event));
+        $event = $this->event([
+            'REMOTE_ADDR' => '192.0.2.10',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.50',
+        ]);
+        $this->assertSame('203.0.113.50', $this->listener(['192.0.2.0/24'])->publicGetClientIp($event));
+        $this->assertSame('192.0.2.10', $this->listener(['10.0.0.1'])->publicGetClientIp($event));
     }
 
-    public function testXForwardedForTakesPriorityOverXRealIp(): void
+    public function testUnknownPeer(): void
     {
-        $event = $this->createMvcEventWithHeaders(
-            [
-                'X-Forwarded-For' => '198.51.100.10',
-                'X-Real-IP' => '198.51.100.20',
-            ],
-            '10.0.0.1'
-        );
-        $this->assertSame('198.51.100.10', $this->listener->publicGetClientIp($event));
-    }
-
-    public function testFallbackToLoopbackWhenNoHeaders(): void
-    {
-        $event = $this->createMvcEventWithHeaders([], null);
-        $this->assertSame('127.0.0.1', $this->listener->publicGetClientIp($event));
+        $this->assertSame('::', $this->listener()->publicGetClientIp($this->event([])));
     }
 }
