@@ -233,9 +233,7 @@ class MvcListeners extends AbstractListenerAggregate
     }
 
     /**
-     * Get the ip of the client, even behind a reverse proxy.
-     *
-     * The trusted proxies of the module take precedence over the main ones.
+     * Get the ip of the client, even behind the trusted reverse proxies.
      */
     protected function getClientIp(MvcEvent $event): string
     {
@@ -244,10 +242,7 @@ class MvcListeners extends AbstractListenerAggregate
         if (!$this->clientIp) {
             return (string) ($server['REMOTE_ADDR'] ?? '::');
         }
-        return $this->clientIp->getIp(
-            $server,
-            $this->clientIp::normalizeTrustedProxies($this->settings->get('botchallenge_trusted_proxies', [])) ?: null
-        );
+        return $this->clientIp->getIp($server);
     }
 
     protected function ipInCidr(string $ip, string $cidr): bool

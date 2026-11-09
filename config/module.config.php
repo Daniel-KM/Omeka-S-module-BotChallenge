@@ -58,8 +58,6 @@ return [
             'botchallenge_cookie_lifetime' => 7,
             'botchallenge_test_headless' => true,
             'botchallenge_bind_ip' => false,
-            // Empty: trust proxies with a private or loopback address.
-            'botchallenge_trusted_proxies' => [],
             // Machine endpoints and token authorized links, where a browser
             // challenge is meaningless or harmful or breaks the service (api,
             // images, feeds, harvesting, callbacks, downloads).

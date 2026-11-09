@@ -228,9 +228,6 @@ class IndexController extends AbstractActionController
         if (!$this->clientIp) {
             return (string) ($server['REMOTE_ADDR'] ?? '::');
         }
-        return $this->clientIp->getIp(
-            $server,
-            $this->clientIp::normalizeTrustedProxies($this->settings->get('botchallenge_trusted_proxies', [])) ?: null
-        );
+        return $this->clientIp->getIp($server);
     }
 }
