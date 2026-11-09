@@ -28,9 +28,15 @@ class IndexController extends AbstractActionController
      */
     protected $settings;
 
-    public function __construct(Settings $settings)
+    /**
+     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp
+     */
+    protected $clientIp;
+
+    public function __construct(Settings $settings, $clientIp)
     {
         $this->settings = $settings;
+        $this->clientIp = $clientIp;
     }
 
     public function indexAction()
@@ -141,9 +147,9 @@ class IndexController extends AbstractActionController
         $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 7) * 86400;
         $userAgent = $this->userAgent();
         $ip = $this->settings->get('botchallenge_bind_ip', false)
-            ? \BotChallenge\Stdlib\ClientIp::fromRequest(
-                $this->getRequest(),
-                $this->settings->get('botchallenge_trusted_proxies') ?: []
+            ? $this->clientIp->getIp(
+                $this->getRequest()->getServer()->toArray(),
+                $this->clientIp::normalizeTrustedProxies($this->settings->get('botchallenge_trusted_proxies', [])) ?: null
             )
             : '';
         // Seconds only: microtime() holds a space, that is encoded as "+" in

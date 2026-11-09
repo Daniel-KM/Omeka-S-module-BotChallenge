@@ -122,7 +122,7 @@ class ConfigForm extends Form
                 'type' => OmekaElement\ArrayTextarea::class,
                 'options' => [
                     'label' => 'Trusted reverse proxies', // @translate
-                    'info' => 'Ips or cidr ranges of the reverse proxies in front of the server (Traefik, nginx, load balancer, cdn), one per line. The ip of the visitor is read in the headers X-Forwarded-For and X-Real-IP only when the request comes from one of them, else anybody could write an excepted ip in them. When empty, the proxies with a private or loopback address are trusted, that is the common case of a proxy in the same host or network. Set them when the proxy has a public address or when the local network is not trusted.', // @translate
+                    'info' => 'Ips or cidr ranges of the reverse proxies in front of the server (Traefik, nginx, load balancer, cdn), one per line, to use instead of the trusted reverse proxies of the main settings. The ip of the visitor is read in the headers X-Forwarded-For and X-Real-IP only when the request comes from one of them, else anybody could write an excepted ip in them. When both lists are empty, the proxies with a private or loopback address are trusted, that is the common case of a proxy in the same host or network.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'botchallenge_trusted_proxies',

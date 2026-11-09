@@ -14,9 +14,15 @@ class MvcListeners extends AbstractListenerAggregate
      */
     protected $settings;
 
-    public function __construct(Settings $settings)
+    /**
+     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp
+     */
+    protected $clientIp;
+
+    public function __construct(Settings $settings, $clientIp)
     {
         $this->settings = $settings;
+        $this->clientIp = $clientIp;
     }
 
     public function attach(EventManagerInterface $events, $priority = 1)
@@ -94,7 +100,7 @@ class MvcListeners extends AbstractListenerAggregate
         $exceptionIps = $this->settings->get('botchallenge_exception_ips_all')
             ?: $this->settings->get('botchallenge_exception_ips', []);
         foreach ($exceptionIps as $exceptionIp) {
-            if ($exceptionIp !== '' && $this->ipInCidr($clientIp, $exceptionIp)) {
+            if ($exceptionIp !== '' && $this->clientIp::ipInCidr($clientIp, $exceptionIp)) {
                 return;
             }
         }
@@ -226,52 +232,17 @@ class MvcListeners extends AbstractListenerAggregate
         return false;
     }
 
+    /**
+     * Get the ip of the client, even behind a reverse proxy.
+     *
+     * The trusted proxies of the module take precedence over the main ones.
+     */
     protected function getClientIp(MvcEvent $event): string
     {
-        return \BotChallenge\Stdlib\ClientIp::fromRequest(
-            $event->getRequest(),
-            $this->settings->get('botchallenge_trusted_proxies') ?: []
+        return $this->clientIp->getIp(
+            $event->getRequest()->getServer()->toArray(),
+            $this->clientIp::normalizeTrustedProxies($this->settings->get('botchallenge_trusted_proxies', [])) ?: null
         );
-    }
-
-    /**
-     * Check if an ip address is within a cidr range.
-     */
-    protected function ipInCidr(string $ip, string $cidr): bool
-    {
-        // Handle single ip (no mask).
-        if (strpos($cidr, '/') === false) {
-            return $ip === $cidr;
-        }
-
-        [$range, $bits] = explode('/', $cidr, 2);
-        $bits = (int) $bits;
-
-        $ipBin = inet_pton($ip);
-        $rangeBin = inet_pton($range);
-
-        if ($ipBin === false || $rangeBin === false) {
-            return false;
-        }
-
-        // Both must be the same family (ip v4 or v6).
-        if (strlen($ipBin) !== strlen($rangeBin)) {
-            return false;
-        }
-
-        // Build mask.
-        $totalBits = strlen($ipBin) * 8;
-        if ($bits < 0 || $bits > $totalBits) {
-            return false;
-        }
-
-        $mask = str_repeat("\xff", (int) ($bits / 8));
-        if ($bits % 8) {
-            $mask .= chr(0xff << (8 - ($bits % 8)));
-        }
-        $mask = str_pad($mask, strlen($ipBin), "\x00");
-
-        return ($ipBin & $mask) === ($rangeBin & $mask);
     }
 
 }

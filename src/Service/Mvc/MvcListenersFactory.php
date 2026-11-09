@@ -11,7 +11,8 @@ class MvcListenersFactory implements FactoryInterface
     public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         return new MvcListeners(
-            $services->get('Omeka\Settings')
+            $services->get('Omeka\Settings'),
+            $services->get('Omeka\ClientIp')
         );
     }
 }
