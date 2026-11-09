@@ -116,6 +116,19 @@ class ConfigForm extends Form
                     'id' => 'botchallenge_exception_ips',
                     'rows' => 10,
                 ],
+            ])
+            ->add([
+                'name' => 'botchallenge_trusted_proxies',
+                'type' => OmekaElement\ArrayTextarea::class,
+                'options' => [
+                    'label' => 'Trusted reverse proxies', // @translate
+                    'info' => 'Ips or cidr ranges of the reverse proxies in front of the server (Traefik, nginx, load balancer, cdn), one per line. The ip of the visitor is read in the headers X-Forwarded-For and X-Real-IP only when the request comes from one of them, else anybody could write an excepted ip in them. When empty, the proxies with a private or loopback address are trusted, that is the common case of a proxy in the same host or network. Set them when the proxy has a public address or when the local network is not trusted.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'botchallenge_trusted_proxies',
+                    'rows' => 4,
+                    'placeholder' => "127.0.0.1\n172.16.0.0/12",
+                ],
             ]);
 
             $inputFilter = $this->getInputFilter();

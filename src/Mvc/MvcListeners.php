@@ -115,7 +115,7 @@ class MvcListeners extends AbstractListenerAggregate
                 ? (string) $headers->get('User-Agent')->getFieldValue()
                 : '';
             $ip = $this->settings->get('botchallenge_bind_ip', false)
-                ? \BotChallenge\Stdlib\ClientIp::fromRequest($event->getRequest())
+                ? $clientIp
                 : '';
             $expectedHmac = \BotChallenge\Controller\IndexController::signature($timestamp, $userAgent, $salt, $ip);
             $seconds = (int) $timestamp;
@@ -228,7 +228,10 @@ class MvcListeners extends AbstractListenerAggregate
 
     protected function getClientIp(MvcEvent $event): string
     {
-        return \BotChallenge\Stdlib\ClientIp::fromRequest($event->getRequest());
+        return \BotChallenge\Stdlib\ClientIp::fromRequest(
+            $event->getRequest(),
+            $this->settings->get('botchallenge_trusted_proxies') ?: []
+        );
     }
 
     /**

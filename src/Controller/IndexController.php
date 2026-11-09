@@ -141,7 +141,10 @@ class IndexController extends AbstractActionController
         $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 7) * 86400;
         $userAgent = $this->userAgent();
         $ip = $this->settings->get('botchallenge_bind_ip', false)
-            ? \BotChallenge\Stdlib\ClientIp::fromRequest($this->getRequest())
+            ? \BotChallenge\Stdlib\ClientIp::fromRequest(
+                $this->getRequest(),
+                $this->settings->get('botchallenge_trusted_proxies') ?: []
+            )
             : '';
         // Seconds only: microtime() holds a space, that is encoded as "+" in
         // the cookie and not decoded back, so the signature never matched.
