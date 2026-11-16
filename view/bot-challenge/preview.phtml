@@ -1,0 +1,68 @@
+<?php
+/**
+ * Head of a page for the link preview bots: the metadata only, never the body.
+ *
+ * The page was processed normally, so the head contains the metadata added by
+ * the theme and the modules (Sharing, MetaTags…). Without them, the main ones
+ * are added from the resource or the page.
+ *
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation|null $previewResource
+ * @var \Omeka\Api\Representation\SitePageRepresentation|null $previewPage
+ */
+
+$plugins = $this->getHelperPluginManager();
+$escapeAttr = $plugins->get('escapeHtmlAttr');
+$escape = $plugins->get('escapeHtml');
+$headMeta = $plugins->get('headMeta');
+$headTitle = $plugins->get('headTitle');
+
+$url = $plugins->get('serverUrl')(true);
+$title = strip_tags((string) $headTitle->renderTitle());
+
+if (strpos((string) $headMeta->toString(), 'og:title') === false) {
+    $site = $plugins->get('currentSite')();
+    $previewResource ??= null;
+    $previewPage ??= null;
+    $description = '';
+    $image = '';
+    if ($previewResource) {
+        $title = (string) $previewResource->displayTitle();
+        $description = (string) $previewResource->displayDescription();
+        $image = (string) $previewResource->thumbnailDisplayUrl('large');
+    } elseif ($previewPage) {
+        $title = (string) $previewPage->title();
+    }
+    $headMeta
+        ->appendProperty('og:type', 'website')
+        ->appendProperty('og:title', $title)
+        ->appendProperty('og:url', $url)
+        ->appendName('twitter:card', $image ? 'summary_large_image' : 'summary');
+    if ($site) {
+        $headMeta->appendProperty('og:site_name', (string) $site->title());
+    }
+    if ($description !== '') {
+        $description = mb_substr(trim(preg_replace('~\s+~u', ' ', strip_tags($description))), 0, 300);
+        $headMeta
+            ->appendName('description', $description)
+            ->appendProperty('og:description', $description);
+    }
+    if ($image !== '') {
+        $headMeta->appendProperty('og:image', $image);
+    }
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <?= $headTitle ?>
+
+    <?= $headMeta ?>
+
+    <link rel="canonical" href="<?= $escapeAttr($url) ?>">
+</head>
+<body>
+    <p><a href="<?= $escapeAttr($url) ?>"><?= $escape($title) ?></a></p>
+</body>
+</html>

@@ -105,6 +105,20 @@ class MvcListeners extends AbstractListenerAggregate
             }
         }
 
+        $headers = $event->getRequest()->getHeaders();
+        $userAgent = $headers->has('User-Agent')
+            ? (string) $headers->get('User-Agent')->getFieldValue()
+            : '';
+
+        // A link preview bot (social networks, messaging apps) cannot solve the
+        // challenge, and the ip of many of them is unknown (each instance of
+        // Mastodon fetches its previews). So it gets the head of the page only,
+        // with its metadata: a scraper using this user agent gets nothing else.
+        if ($this->isPreviewBot($userAgent)) {
+            $this->servePreviewOnly($event);
+            return;
+        }
+
         // Check cookie: format is "{timestamp}_{hmac}".
         $cookie = $event->getRequest()->getCookie();
         $cookieValue = $cookie && $cookie->offsetExists('omeka_bot_challenge')
@@ -116,10 +130,6 @@ class MvcListeners extends AbstractListenerAggregate
             $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 7) * 86400;
             $timestamp = substr($cookieValue, 0, $pos);
             $hmac = substr($cookieValue, $pos + 1);
-            $headers = $event->getRequest()->getHeaders();
-            $userAgent = $headers->has('User-Agent')
-                ? (string) $headers->get('User-Agent')->getFieldValue()
-                : '';
             $ip = $this->settings->get('botchallenge_bind_ip', false)
                 ? $clientIp
                 : '';
@@ -152,6 +162,52 @@ class MvcListeners extends AbstractListenerAggregate
         $response->getHeaders()->addHeaderLine('Location', $url);
         $response->setStatusCode(302);
         return $response;
+    }
+
+    protected function isPreviewBot(string $userAgent): bool
+    {
+        if ($userAgent === '') {
+            return false;
+        }
+        foreach ((array) $this->settings->get('botchallenge_preview_user_agents', []) as $agent) {
+            $agent = trim((string) $agent);
+            if ($agent !== '' && stripos($userAgent, $agent) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Render the page in a layout that outputs its head only.
+     *
+     * The page is processed normally, so the metadata added by the theme or
+     * the modules (Sharing, MetaTags…) are kept, but its body is not output.
+     */
+    protected function servePreviewOnly(MvcEvent $event): void
+    {
+        $event->getApplication()->getEventManager()->attach(
+            MvcEvent::EVENT_RENDER,
+            function (MvcEvent $event): void {
+                $viewModel = $event->getViewModel();
+                if ($viewModel->terminate()) {
+                    return;
+                }
+                $vars = [];
+                foreach ($viewModel->getChildren() as $child) {
+                    $vars += array_filter([
+                        'previewResource' => $child->getVariable('resource') ?? $child->getVariable('media') ?? $child->getVariable('itemSet'),
+                        'previewPage' => $child->getVariable('page'),
+                    ]);
+                }
+                $viewModel
+                    ->setTemplate('bot-challenge/preview')
+                    ->setVariables($vars);
+                $event->getResponse()->getHeaders()->addHeaderLine('Cache-Control', 'no-store');
+            },
+            // Before the rendering of the view (-10000).
+            100
+        );
     }
 
     /**

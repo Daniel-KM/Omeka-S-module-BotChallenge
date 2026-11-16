@@ -100,6 +100,18 @@ class ConfigForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'botchallenge_preview_user_agents',
+                'type' => OmekaElement\ArrayTextarea::class,
+                'options' => [
+                    'label' => 'Link preview bots', // @translate
+                    'info' => 'Parts of the user agent of the bots that build the previews of the shared links (social networks, messaging apps), one per line. They cannot solve the challenge, so they get the head of the page only, with its metadata (title, description, thumbnail), never its body: a scraper using such a user agent gets nothing else.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'botchallenge_preview_user_agents',
+                    'rows' => 8,
+                ],
+            ])
+            ->add([
                 'name' => 'botchallenge_exception_bots',
                 'type' => Element\MultiCheckbox::class,
                 'options' => [
