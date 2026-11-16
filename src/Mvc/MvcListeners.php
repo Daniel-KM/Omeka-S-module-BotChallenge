@@ -110,6 +110,12 @@ class MvcListeners extends AbstractListenerAggregate
             ? (string) $headers->get('User-Agent')->getFieldValue()
             : '';
 
+        // Skip the bots verified by their network: the user agent announces a
+        // bot and the ip belongs to its domain (forward-confirmed reverse dns).
+        if ($this->isVerifiedByReverseDns($userAgent, $clientIp)) {
+            return;
+        }
+
         // A link preview bot (social networks, messaging apps) cannot solve the
         // challenge, and the ip of many of them is unknown (each instance of
         // Mastodon fetches its previews). So it gets the head of the page only,
@@ -164,6 +170,25 @@ class MvcListeners extends AbstractListenerAggregate
         return $response;
     }
 
+    /**
+     * Is the user agent a bot verified by its network?
+     *
+     * Each entry maps a part of the user agent to the domain of the reverse dns
+     * of its ips, for example "TelegramBot" to "ptr.telegram.org".
+     */
+    protected function isVerifiedByReverseDns(string $userAgent, string $ip): bool
+    {
+        if ($userAgent === '' || $ip === '') {
+            return false;
+        }
+        foreach ((array) $this->settings->get('botchallenge_exception_rdns', []) as $agent => $domain) {
+            if ((string) $agent !== '' && stripos($userAgent, (string) $agent) !== false) {
+                return $this->reverseDns()->verify($ip, (string) $domain);
+            }
+        }
+        return false;
+    }
+
     protected function isPreviewBot(string $userAgent): bool
     {
         if ($userAgent === '') {
@@ -208,6 +233,11 @@ class MvcListeners extends AbstractListenerAggregate
             // Before the rendering of the view (-10000).
             100
         );
+    }
+
+    protected function reverseDns(): \BotChallenge\Stdlib\ReverseDns
+    {
+        return new \BotChallenge\Stdlib\ReverseDns();
     }
 
     /**

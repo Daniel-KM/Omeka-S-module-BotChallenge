@@ -15,6 +15,7 @@
             <file>tests/BotChallengeTest/Mvc/TokenTest.php</file>
             <file>tests/BotChallengeTest/Mvc/PreviewBotTest.php</file>
             <file>tests/BotChallengeTest/Stdlib/BotIpsTest.php</file>
+            <file>tests/BotChallengeTest/Stdlib/ReverseDnsTest.php</file>
         </testsuite>
         <!-- Controller tests (HTTP dispatch) -->
         <testsuite name="controller">

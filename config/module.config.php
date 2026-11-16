@@ -126,6 +126,11 @@ return [
                 'vkShare',
                 'WhatsApp',
             ],
+            // Bots verified by their network (forward-confirmed reverse dns):
+            // part of the user agent => domain of the reverse dns of its ips.
+            'botchallenge_exception_rdns' => [
+                'TelegramBot' => 'ptr.telegram.org',
+            ],
             'botchallenge_exception_bots' => \BotChallenge\Stdlib\BotIps::DEFAULT_BOTS,
             'botchallenge_exception_ips' => [],
             // Ranges refreshed from the sources, by bot.

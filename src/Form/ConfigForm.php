@@ -112,6 +112,19 @@ class ConfigForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'botchallenge_exception_rdns',
+                'type' => OmekaElement\ArrayTextarea::class,
+                'options' => [
+                    'label' => 'Bots verified by reverse dns', // @translate
+                    'info' => 'One bot by line, as "part of the user agent = domain", for example "TelegramBot = ptr.telegram.org". The bot is excluded from the challenge when its ip resolves to a host of the domain and this host resolves back to its ip.', // @translate
+                    'as_key_value' => true,
+                ],
+                'attributes' => [
+                    'id' => 'botchallenge_exception_rdns',
+                    'rows' => 4,
+                ],
+            ])
+            ->add([
                 'name' => 'botchallenge_exception_bots',
                 'type' => Element\MultiCheckbox::class,
                 'options' => [
