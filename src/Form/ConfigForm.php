@@ -104,11 +104,23 @@ class ConfigForm extends Form
                 'type' => OmekaElement\ArrayTextarea::class,
                 'options' => [
                     'label' => 'Link preview bots', // @translate
-                    'info' => 'Parts of the user agent of the bots that build the previews of the shared links (social networks, messaging apps), one per line. They cannot solve the challenge, so they get the head of the page only, with its metadata (title, description, thumbnail), never its body: a scraper using such a user agent gets nothing else.', // @translate
+                    'info' => 'Parts of the user agent of the bots that build the previews of the shared links (social networks, messaging apps), one per line. They cannot solve the challenge, so they get a card with the metadata of the page (title, description, thumbnail), built without dispatching the page: a scraper using such a user agent gets nothing else and does not load the server.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'botchallenge_preview_user_agents',
                     'rows' => 8,
+                ],
+            ])
+            ->add([
+                'name' => 'botchallenge_preview_modules',
+                'type' => OmekaElement\ArrayTextarea::class,
+                'options' => [
+                    'label' => 'Modules adding the metadata of the link previews', // @translate
+                    'info' => 'Namespaces of the modules whose listeners add the metadata of the pages (MetaTags, ResourceMeta, Sharing…), one per line. Only their listeners are called to build the preview, so their settings apply, without dispatching the page.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'botchallenge_preview_modules',
+                    'rows' => 3,
                 ],
             ])
             ->add([

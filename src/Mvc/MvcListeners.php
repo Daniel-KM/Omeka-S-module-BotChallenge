@@ -135,11 +135,11 @@ class MvcListeners extends AbstractListenerAggregate
 
         // A link preview bot (social networks, messaging apps) cannot solve the
         // challenge, and the ip of many of them is unknown (each instance of
-        // Mastodon fetches its previews). So it gets the head of the page only,
-        // with its metadata: a scraper using this user agent gets nothing else.
+        // Mastodon fetches its previews). So it gets a card with the metadata of
+        // the page only, built without dispatching the page, so a scraper using
+        // this user agent gets nothing else and does not load the server.
         if ($this->isPreviewBot($userAgent)) {
-            $this->servePreviewOnly($event);
-            return;
+            return (new LinkPreview())($event, (array) $this->settings->get('botchallenge_preview_modules', []));
         }
 
         // Check cookie: format is "{timestamp}_{hmac}".
@@ -251,38 +251,6 @@ class MvcListeners extends AbstractListenerAggregate
             }
         }
         return false;
-    }
-
-    /**
-     * Render the page in a layout that outputs its head only.
-     *
-     * The page is processed normally, so the metadata added by the theme or
-     * the modules (Sharing, MetaTags…) are kept, but its body is not output.
-     */
-    protected function servePreviewOnly(MvcEvent $event): void
-    {
-        $event->getApplication()->getEventManager()->attach(
-            MvcEvent::EVENT_RENDER,
-            function (MvcEvent $event): void {
-                $viewModel = $event->getViewModel();
-                if ($viewModel->terminate()) {
-                    return;
-                }
-                $vars = [];
-                foreach ($viewModel->getChildren() as $child) {
-                    $vars += array_filter([
-                        'previewResource' => $child->getVariable('resource') ?? $child->getVariable('media') ?? $child->getVariable('itemSet'),
-                        'previewPage' => $child->getVariable('page'),
-                    ]);
-                }
-                $viewModel
-                    ->setTemplate('bot-challenge/preview')
-                    ->setVariables($vars);
-                $event->getResponse()->getHeaders()->addHeaderLine('Cache-Control', 'no-store');
-            },
-            // Before the rendering of the view (-10000).
-            100
-        );
     }
 
     protected function reverseDns(): \BotChallenge\Stdlib\ReverseDns

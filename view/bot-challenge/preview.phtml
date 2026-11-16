@@ -1,10 +1,10 @@
 <?php
 /**
- * Head of a page for the link preview bots: the metadata only, never the body.
+ * Card of a page for the link preview bots: its metadata only.
  *
- * The page was processed normally, so the head contains the metadata added by
- * the theme and the modules (Sharing, MetaTags…). Without them, the main ones
- * are added from the resource or the page.
+ * The head contains the metadata added by the listeners of the modules that
+ * manage them (MetaTags, ResourceMeta, Sharing). Without them, the main ones
+ * are added from the resource, the page or the site.
  *
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation|null $previewResource
@@ -20,7 +20,16 @@ $headTitle = $plugins->get('headTitle');
 $url = $plugins->get('serverUrl')(true);
 $title = strip_tags((string) $headTitle->renderTitle());
 
-if (strpos((string) $headMeta->toString(), 'og:title') === false) {
+// The output escapes the attributes ("og&#x3A;title"), so check the items.
+$hasOpenGraph = false;
+foreach ($headMeta->getContainer() as $item) {
+    if (($item->type ?? '') === 'property' && ($item->property ?? '') === 'og:title') {
+        $hasOpenGraph = true;
+        break;
+    }
+}
+
+if (!$hasOpenGraph) {
     $site = $plugins->get('currentSite')();
     $previewResource ??= null;
     $previewPage ??= null;
@@ -32,6 +41,9 @@ if (strpos((string) $headMeta->toString(), 'og:title') === false) {
         $image = (string) $previewResource->thumbnailDisplayUrl('large');
     } elseif ($previewPage) {
         $title = (string) $previewPage->title();
+    } elseif ($site) {
+        $title = (string) $site->title();
+        $description = (string) $site->summary();
     }
     $headMeta
         ->appendProperty('og:type', 'website')
@@ -51,6 +63,13 @@ if (strpos((string) $headMeta->toString(), 'og:title') === false) {
         $headMeta->appendProperty('og:image', $image);
     }
 }
+// Keep the links of the metadata (oEmbed…), not the stylesheets of the modules.
+$headLink = $plugins->get('headLink');
+foreach ($headLink->getContainer()->getArrayCopy() as $key => $item) {
+    if (($item->rel ?? '') === 'stylesheet') {
+        $headLink->getContainer()->offsetUnset($key);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -59,6 +78,8 @@ if (strpos((string) $headMeta->toString(), 'og:title') === false) {
     <?= $headTitle ?>
 
     <?= $headMeta ?>
+
+    <?= $headLink ?>
 
     <link rel="canonical" href="<?= $escapeAttr($url) ?>">
 </head>

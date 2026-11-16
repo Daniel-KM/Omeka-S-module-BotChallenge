@@ -102,8 +102,8 @@ return [
                 '/validate',
                 '/zip-download',
             ],
-            // Link preview bots (social networks, messaging apps): they get
-            // the head of the page only, with its metadata, never its body.
+            // Link preview bots (social networks, messaging apps): they get a
+            // card with the metadata of the page, never the page itself.
             'botchallenge_preview_user_agents' => [
                 'Akkoma',
                 'Bluesky',
@@ -125,6 +125,12 @@ return [
                 'Twitterbot',
                 'vkShare',
                 'WhatsApp',
+            ],
+            // Modules whose listeners add the metadata of the link previews.
+            'botchallenge_preview_modules' => [
+                'MetaTags',
+                'ResourceMeta',
+                'Sharing',
             ],
             // Bots verified by their network (forward-confirmed reverse dns):
             // part of the user agent => domain of the reverse dns of its ips.
