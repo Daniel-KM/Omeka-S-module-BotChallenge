@@ -15,11 +15,6 @@ class MvcListeners extends AbstractListenerAggregate
     const RDNS_CACHE_SECONDS = 21600;
 
     /**
-     * Maximum number of ips in the cache of the reverse dns verifications.
-     */
-    const RDNS_CACHE_SIZE = 1000;
-
-    /**
      * A reverse dns verification longer than that pauses the next ones.
      */
     const RDNS_SLOW_SECONDS = 2;
@@ -212,30 +207,28 @@ class MvcListeners extends AbstractListenerAggregate
      * The user agent is declarative, so a botnet may use the one of a verified
      * bot to trigger two dns lookups on each request. The result is cached by
      * ip, positive or not, and the lookups are paused when the dns is slow: the
-     * bot then gets the link preview only, that is cheap.
+     * bot then gets the link preview only, that is cheap. The cache is not
+     * stored in the settings, that are all loaded on each request.
      */
     protected function verifyReverseDnsCached(string $ip, string $domain): bool
     {
-        $now = time();
-        $key = $ip . ' ' . $domain;
-        $cache = (array) $this->settings->get('botchallenge_rdns_cache', []);
-        if (isset($cache[$key]) && (int) ($cache[$key][1] ?? 0) > $now) {
-            return (bool) $cache[$key][0];
+        $cache = $this->cache();
+        $key = 'rdns:' . $ip . ' ' . $domain;
+        $cached = $cache->get($key);
+        if ($cached !== null) {
+            return (bool) $cached;
         }
-        if ((int) $this->settings->get('botchallenge_rdns_paused_until', 0) > $now) {
+        if ($cache->get('rdns:paused')) {
             return false;
         }
 
         $start = microtime(true);
         $isVerified = $this->reverseDns()->verify($ip, $domain);
         if (microtime(true) - $start > self::RDNS_SLOW_SECONDS) {
-            $this->settings->set('botchallenge_rdns_paused_until', $now + self::RDNS_PAUSE_SECONDS);
+            $cache->set('rdns:paused', true, self::RDNS_PAUSE_SECONDS);
         }
 
-        $cache = array_filter($cache, fn ($entry) => (int) ($entry[1] ?? 0) > $now);
-        $cache = array_slice($cache, -(self::RDNS_CACHE_SIZE - 1), null, true);
-        $cache[$key] = [$isVerified, $now + self::RDNS_CACHE_SECONDS];
-        $this->settings->set('botchallenge_rdns_cache', $cache);
+        $cache->set($key, $isVerified, self::RDNS_CACHE_SECONDS);
         return $isVerified;
     }
 
@@ -251,6 +244,11 @@ class MvcListeners extends AbstractListenerAggregate
             }
         }
         return false;
+    }
+
+    protected function cache(): \BotChallenge\Stdlib\Cache
+    {
+        return new \BotChallenge\Stdlib\Cache();
     }
 
     protected function reverseDns(): \BotChallenge\Stdlib\ReverseDns
