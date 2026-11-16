@@ -131,6 +131,10 @@ return [
             'botchallenge_exception_rdns' => [
                 'TelegramBot' => 'ptr.telegram.org',
             ],
+            // Cache of the reverse dns verifications by ip, and pause of them
+            // when the dns is slow.
+            'botchallenge_rdns_cache' => [],
+            'botchallenge_rdns_paused_until' => 0,
             'botchallenge_exception_bots' => \BotChallenge\Stdlib\BotIps::DEFAULT_BOTS,
             'botchallenge_exception_ips' => [],
             // Ranges refreshed from the sources, by bot.
