@@ -134,7 +134,54 @@ class IndexControllerTest extends AbstractHttpControllerTestCase
     {
         $this->dispatch('/bot-challenge');
         $body = $this->getResponse()->getBody();
-        $this->assertMatchesRegularExpression('/var nonce = "[0-9a-f]{32}"/', $body);
+        $this->assertMatchesRegularExpression('/var nonce = "\\d{10}\\.[0-9a-f]{32}\\.[0-9a-f]{64}"/', $body);
+    }
+
+    /**
+     * The nonce is signed instead of stored, so a bot that only reaches the
+     * page does not create a session.
+     */
+    public function testChallengePageStoresNothingInSession(): void
+    {
+        $this->dispatch('/bot-challenge');
+        $this->assertResponseStatusCode(200);
+        $this->assertArrayNotHasKey('BotChallenge', $_SESSION ?? []);
+    }
+
+    public function testSignedNonceIsAcceptedOnceOnly(): void
+    {
+        $settings = $this->getApplication()->getServiceManager()->get('Omeka\Settings');
+        $settings->set('botchallenge_delay', 0);
+        try {
+            $nonce = IndexController::createNonce(
+                time() - 10,
+                bin2hex(random_bytes(16)),
+                '',
+                (string) $settings->get('botchallenge_salt', '')
+            );
+            $this->dispatch('/bot-challenge', 'POST', ['nonce' => $nonce]);
+            $this->assertResponseStatusCode(200);
+            $this->assertStringContainsString('success', $this->getResponse()->getBody());
+
+            $this->reset();
+            $this->dispatch('/bot-challenge', 'POST', ['nonce' => $nonce]);
+            $this->assertResponseStatusCode(403);
+        } finally {
+            $this->getApplication()->getServiceManager()->get('Omeka\Settings')->delete('botchallenge_delay');
+        }
+    }
+
+    public function testExpiredNonceIsRefused(): void
+    {
+        $settings = $this->getApplication()->getServiceManager()->get('Omeka\Settings');
+        $nonce = IndexController::createNonce(
+            time() - IndexController::NONCE_LIFETIME - 1,
+            bin2hex(random_bytes(16)),
+            '',
+            (string) $settings->get('botchallenge_salt', '')
+        );
+        $this->dispatch('/bot-challenge', 'POST', ['nonce' => $nonce]);
+        $this->assertResponseStatusCode(403);
     }
 
     /**

@@ -30,4 +30,34 @@ class TestableMvcListeners extends MvcListeners
     {
         return $this->pathIsExcepted($path, $exceptionPaths);
     }
+
+    /**
+     * @var \BotChallenge\Stdlib\ReverseDns|null
+     */
+    public $fakeReverseDns;
+
+    public function publicIsPreviewBot(string $userAgent): bool
+    {
+        return $this->isPreviewBot($userAgent);
+    }
+
+    public function publicIsVerifiedByReverseDns(string $userAgent, string $ip): bool
+    {
+        return $this->isVerifiedByReverseDns($userAgent, $ip);
+    }
+
+    /**
+     * @var \BotChallenge\Stdlib\Cache|null
+     */
+    public $fakeCache;
+
+    protected function cache(): \BotChallenge\Stdlib\Cache
+    {
+        return $this->fakeCache ?? parent::cache();
+    }
+
+    protected function reverseDns(): \BotChallenge\Stdlib\ReverseDns
+    {
+        return $this->fakeReverseDns ?? parent::reverseDns();
+    }
 }
