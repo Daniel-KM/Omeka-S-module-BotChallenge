@@ -4,7 +4,7 @@ namespace BotChallenge\Controller;
 
 use Laminas\Http\Header\SetCookie;
 use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\Session\Container as SessionContainer;
+use BotChallenge\Stdlib\Cache;
 use Laminas\View\Model\ViewModel;
 use Omeka\Settings\Settings;
 
@@ -49,10 +49,15 @@ class IndexController extends AbstractActionController
             return $this->verify();
         }
 
-        $session = new SessionContainer('BotChallenge');
-        $nonce = bin2hex(random_bytes(16));
-        $session->nonce = $nonce;
-        $session->nonceTime = time();
+        // The nonce is signed instead of stored in the session, so a bot that
+        // reaches the page does not create a session.
+        $nonce = self::createNonce(
+            time(),
+            bin2hex(random_bytes(16)),
+            $this->userAgent(),
+            $this->salt(),
+            $this->boundIp()
+        );
 
         // Validate redirect url: must start with "/" and not "//".
         $basePath = $this->getRequest()->getBasePath();
@@ -104,9 +109,11 @@ class IndexController extends AbstractActionController
     /**
      * Check the nonce posted by the client and deliver the cookie.
      *
-     * The nonce is single use and tied to the session, so the cookie cannot be
-     * obtained with a single request, and a harvested page is useless without
-     * its session.
+     * The nonce is signed for the client and single use, so the cookie cannot
+     * be obtained with a single request. A harvested nonce can be used once
+     * from another client with the same user agent, like the session cookie
+     * could be copied with the page before, and the ip is checked only when the
+     * option is set.
      */
     protected function verify()
     {
@@ -115,19 +122,28 @@ class IndexController extends AbstractActionController
             ->addHeaderLine('Cache-Control', 'no-store, no-cache, must-revalidate')
             ->addHeaderLine('Content-Type', 'application/json');
 
-        $session = new SessionContainer('BotChallenge');
-        $expected = (string) ($session->nonce ?? '');
-        $nonceTime = (int) ($session->nonceTime ?? 0);
-
-        // Single use: consume the nonce whatever the result, so a failed or
-        // replayed check requires a new challenge page.
-        unset($session->nonce, $session->nonceTime);
+        $salt = $this->salt();
+        $userAgent = $this->userAgent();
+        $ip = $this->boundIp();
 
         $posted = (string) $this->params()->fromPost('nonce', '');
-        $elapsed = time() - $nonceTime;
-        if ($expected === ''
-            || !hash_equals($expected, $posted)
+        $nonceTime = self::nonceTime($posted, $userAgent, $salt, $ip);
+        $elapsed = time() - (int) $nonceTime;
+
+        // Single use: consume the nonce whatever the result, so a failed or
+        // replayed check requires a new challenge page. Without usable cache,
+        // a nonce can be replayed until its expiration.
+        $isReplayed = false;
+        if ($nonceTime !== null && $elapsed <= self::NONCE_LIFETIME) {
+            $cache = Cache::forInstallation();
+            $key = 'nonce_' . hash('sha256', $posted);
+            $isReplayed = $cache->get($key) !== null;
+            $cache->set($key, 1, self::NONCE_LIFETIME);
+        }
+
+        if ($nonceTime === null
             || $elapsed > self::NONCE_LIFETIME
+            || $isReplayed
         ) {
             $response->setStatusCode(403);
             $response->setContent(json_encode(['status' => 'error']));
@@ -145,12 +161,7 @@ class IndexController extends AbstractActionController
             return $response;
         }
 
-        $salt = (string) $this->settings->get('botchallenge_salt', '');
         $cookieLifetime = (int) $this->settings->get('botchallenge_cookie_lifetime', 7) * 86400;
-        $userAgent = $this->userAgent();
-        $ip = $this->settings->get('botchallenge_bind_ip', false)
-            ? $this->clientIp()
-            : '';
         // Seconds only: microtime() holds a space, that is encoded as "+" in
         // the cookie and not decoded back, so the signature never matched.
         $timestamp = (string) time();
@@ -197,6 +208,53 @@ class IndexController extends AbstractActionController
     public static function signature(string $timestamp, string $userAgent, string $salt, string $ip = ''): string
     {
         return hash_hmac('sha256', $timestamp . "\n" . $userAgent . "\n" . $ip, $salt);
+    }
+
+    /**
+     * Create a nonce signed for a client: "{timestamp}.{random}.{hmac}".
+     */
+    public static function createNonce(int $time, string $random, string $userAgent, string $salt, string $ip = ''): string
+    {
+        return $time . '.' . $random . '.' . self::nonceSignature((string) $time, $random, $userAgent, $salt, $ip);
+    }
+
+    /**
+     * Get the time of a nonce, or null when it is not signed for the client.
+     */
+    public static function nonceTime(string $nonce, string $userAgent, string $salt, string $ip = ''): ?int
+    {
+        $parts = explode('.', $nonce);
+        if (count($parts) !== 3 || !ctype_digit($parts[0]) || $parts[1] === '') {
+            return null;
+        }
+        [$time, $random, $hmac] = $parts;
+        return hash_equals(self::nonceSignature($time, $random, $userAgent, $salt, $ip), $hmac)
+            ? (int) $time
+            : null;
+    }
+
+    /**
+     * The prefix distinguishes the signature of the nonce from the one of the
+     * cookie, that use the same salt.
+     */
+    protected static function nonceSignature(string $time, string $random, string $userAgent, string $salt, string $ip): string
+    {
+        return hash_hmac('sha256', "nonce\n" . $time . "\n" . $random . "\n" . $userAgent . "\n" . $ip, $salt);
+    }
+
+    protected function salt(): string
+    {
+        return (string) $this->settings->get('botchallenge_salt', '');
+    }
+
+    /**
+     * The ip is used for the signatures only when the option is set.
+     */
+    protected function boundIp(): string
+    {
+        return $this->settings->get('botchallenge_bind_ip', false)
+            ? $this->clientIp()
+            : '';
     }
 
     protected function userAgent(): string

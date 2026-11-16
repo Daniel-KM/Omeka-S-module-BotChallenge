@@ -248,12 +248,7 @@ class MvcListeners extends AbstractListenerAggregate
 
     protected function cache(): \BotChallenge\Stdlib\Cache
     {
-        // The keys are distinct by installation, and the fallback directory is
-        // private to it.
-        return new \BotChallenge\Stdlib\Cache(
-            substr(sha1(OMEKA_PATH), 0, 12),
-            OMEKA_PATH . '/files/botchallenge-cache'
-        );
+        return \BotChallenge\Stdlib\Cache::forInstallation();
     }
 
     protected function reverseDns(): \BotChallenge\Stdlib\ReverseDns
