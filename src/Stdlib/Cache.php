@@ -7,7 +7,9 @@ namespace BotChallenge\Stdlib;
  *
  * The settings of Omeka are all loaded on each request, so a cache stored there
  * would be read by every visitor. The cache uses apcu when it is enabled, that
- * is shared by the processes of the server, else a file by key in a directory.
+ * is shared by the processes of the server, else a file by key in the temporary
+ * directory, else in a private directory of the installation. The keys are
+ * prefixed by installation, since several sites may share a server.
  */
 class Cache
 {
@@ -17,17 +19,34 @@ class Cache
     protected $directory;
 
     /**
-     * @param string|null $directory Force the files in this directory, for
-     *   example in tests. By default, apcu is used when enabled.
+     * @var string
      */
-    public function __construct(?string $directory = null)
+    protected $namespace;
+
+    /**
+     * @var bool False when no storage is usable: nothing is cached.
+     */
+    protected $isUsable = true;
+
+    /**
+     * @param string $namespace Prefix of the keys, distinct by installation.
+     * @param string|null $fallbackDirectory Used when apcu is disabled and the
+     *   temporary directory is not writable. A deny-all .htaccess is added.
+     * @param bool $useApcu Disable to force the files, for example in tests.
+     */
+    public function __construct(string $namespace, ?string $fallbackDirectory = null, bool $useApcu = true)
     {
-        if ($directory === null
-            && !(function_exists('apcu_enabled') && apcu_enabled())
-        ) {
-            $directory = sys_get_temp_dir() . '/botchallenge-cache';
+        $this->namespace = $namespace;
+        if ($useApcu && function_exists('apcu_enabled') && apcu_enabled()) {
+            return;
         }
-        $this->directory = $directory;
+        foreach ([sys_get_temp_dir() . '/botchallenge-' . $namespace, $fallbackDirectory] as $directory) {
+            if ($directory && $this->prepareDirectory($directory)) {
+                $this->directory = $directory;
+                return;
+            }
+        }
+        $this->isUsable = false;
     }
 
     /**
@@ -35,9 +54,12 @@ class Cache
      */
     public function get(string $key)
     {
+        if (!$this->isUsable) {
+            return null;
+        }
         if ($this->directory === null) {
             $success = false;
-            $value = apcu_fetch('botchallenge:' . $key, $success);
+            $value = apcu_fetch('botchallenge:' . $this->namespace . ':' . $key, $success);
             return $success ? $value : null;
         }
         $data = @unserialize((string) @file_get_contents($this->filepath($key)), ['allowed_classes' => false]);
@@ -49,11 +71,11 @@ class Cache
      */
     public function set(string $key, $value, int $ttl): void
     {
-        if ($this->directory === null) {
-            apcu_store('botchallenge:' . $key, $value, $ttl);
+        if (!$this->isUsable) {
             return;
         }
-        if (!is_dir($this->directory) && !@mkdir($this->directory, 0700, true) && !is_dir($this->directory)) {
+        if ($this->directory === null) {
+            apcu_store('botchallenge:' . $this->namespace . ':' . $key, $value, $ttl);
             return;
         }
         @file_put_contents($this->filepath($key), serialize([time() + $ttl, $value]), LOCK_EX);
@@ -66,6 +88,26 @@ class Cache
                 }
             }
         }
+    }
+
+    public function isUsable(): bool
+    {
+        return $this->isUsable;
+    }
+
+    protected function prepareDirectory(string $directory): bool
+    {
+        if (!is_dir($directory) && !@mkdir($directory, 0700, true) && !is_dir($directory)) {
+            return false;
+        }
+        if (!is_writable($directory)) {
+            return false;
+        }
+        // The fallback directory may be served by the web server.
+        if (!file_exists($directory . '/.htaccess')) {
+            @file_put_contents($directory . '/.htaccess', "Require all denied\n");
+        }
+        return true;
     }
 
     protected function filepath(string $key): string
