@@ -74,6 +74,7 @@ class MvcListeners extends AbstractListenerAggregate
             'bot-challenge',
             // Machine endpoints served by a route, not by a path prefix.
             'site/sitemap',
+            'site/sitemapindex',
         ];
         if (in_array($routeName, $excludedRoutes)) {
             return;
@@ -313,6 +314,14 @@ class MvcListeners extends AbstractListenerAggregate
             if ($exceptionPath !== '' && $exceptionPath[0] === '*') {
                 $segment = rtrim(substr($exceptionPath, 1), '/');
                 if ($segment === '') {
+                    continue;
+                }
+                // A star inside the segment matches any characters, for
+                // numbered files like "*/sitemap-*.xml".
+                if (strpos($segment, '*') !== false) {
+                    if (fnmatch('*' . $segment, $path) || fnmatch('*' . $segment . '/*', $path)) {
+                        return true;
+                    }
                     continue;
                 }
                 if (substr($path, -strlen($segment)) === $segment

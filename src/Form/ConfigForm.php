@@ -92,7 +92,7 @@ class ConfigForm extends Form
                 'type' => OmekaElement\ArrayTextarea::class,
                 'options' => [
                     'label' => 'Exception paths', // @translate
-                    'info' => 'Url path prefixes to exclude from the challenge, one per line. Example: /api', // @translate
+                    'info' => 'Url path prefixes to exclude from the challenge, one per line. A leading star matches the end of any path, and a star inside matches any characters. Examples: /api, */rss, */sitemap-*.xml', // @translate
                 ],
                 'attributes' => [
                     'id' => 'botchallenge_exception_paths',
