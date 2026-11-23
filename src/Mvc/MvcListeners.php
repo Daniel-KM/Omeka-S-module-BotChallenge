@@ -27,7 +27,7 @@ class MvcListeners extends AbstractListenerAggregate
     protected $settings;
 
     /**
-     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp
+     * @var \Omeka\Stdlib\ClientIp|\Common\Stdlib\ClientIp|null
      */
     protected $clientIp;
 
@@ -50,8 +50,9 @@ class MvcListeners extends AbstractListenerAggregate
 
     public function handleChallenge(MvcEvent $event)
     {
-        // Skip CLI (background jobs, scripts).
-        if (PHP_SAPI === 'cli') {
+        // Skip CLI (background jobs, scripts), and skip when the client ip
+        // cannot be determined, so the site remains available.
+        if (PHP_SAPI === 'cli' || !$this->clientIp) {
             return;
         }
 
