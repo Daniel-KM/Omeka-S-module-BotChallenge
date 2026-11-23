@@ -75,6 +75,33 @@ class PathIsExceptedTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider wildcardProvider
+     */
+    public function testInnerStarMatchesAnyCharacters(string $path, bool $expected): void
+    {
+        $exceptionPaths = ['*/sitemap-*.xml', '*/sitemap.xml', '*/sitemapindex.xml'];
+        $this->assertSame(
+            $expected,
+            $this->listener->publicPathIsExcepted($path, $exceptionPaths),
+            sprintf('wildcard pathIsExcepted("%s") should return %s', $path, $expected ? 'true' : 'false')
+        );
+    }
+
+    public function wildcardProvider(): array
+    {
+        return [
+            'site sitemap' => ['/s/mysite/sitemap.xml', true],
+            'site sitemap page' => ['/s/mysite/sitemap-1.xml', true],
+            'site sitemap high page' => ['/s/mysite/sitemap-14.xml', true],
+            'site sitemap index' => ['/s/mysite/sitemapindex.xml', true],
+            'root sitemap' => ['/sitemap.xml', true],
+            'root sitemap page' => ['/sitemap-2.xml', true],
+            'other xml file' => ['/s/mysite/page/sitemap-help', false],
+            'page named like a sitemap' => ['/s/mysite/page/sitemaps', false],
+        ];
+    }
+
     public function testTrailingSlashInExceptionIsNormalized(): void
     {
         $this->assertTrue($this->listener->publicPathIsExcepted('/oai', ['/oai/']));
